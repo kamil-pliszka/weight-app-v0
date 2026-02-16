@@ -13,7 +13,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.pl.myweightapp.R
 import com.pl.myweightapp.xxx.millisToLocalDate
 import java.time.LocalDate
 
@@ -35,7 +37,7 @@ fun LocalDatePickerDialog(
                 Icon(
                     imageVector = Icons.Default.Check,
                     tint = MaterialTheme.colorScheme.primary,
-                    contentDescription = "OK"
+                    contentDescription = stringResource(R.string.date_picker_ok)
                 )
             }
         },
@@ -47,7 +49,7 @@ fun LocalDatePickerDialog(
                 Icon(
                     imageVector = Icons.Default.Close,
                     tint = MaterialTheme.colorScheme.primary,
-                    contentDescription = "Cancel"
+                    contentDescription = stringResource(R.string.date_picker_cancel)
                 )
             }
         }

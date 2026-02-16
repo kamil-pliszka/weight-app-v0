@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -124,7 +125,7 @@ fun ProfileContent(
             OutlinedTextField(
                 value = state.name,
                 onValueChange = { onAction(ProfileAction.NameChanged(it)) },
-                label = { Text("Imię") },
+                label = { Text(stringResource(R.string.profile_name)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Done),
                 maxLines = 1,
                 modifier = Modifier.fillMaxWidth(),
@@ -146,7 +147,7 @@ fun ProfileContent(
             OutlinedTextField(
                 value = state.age,
                 onValueChange = { onAction(ProfileAction.AgeChanged(it)) },
-                label = { Text("Wiek") },
+                label = { Text(stringResource(R.string.profile_age)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
                 maxLines = 1,
                 modifier = Modifier.fillMaxWidth()
@@ -155,7 +156,7 @@ fun ProfileContent(
             OutlinedTextField(
                 value = state.height,
                 onValueChange = { onAction(ProfileAction.HeightChanged(it)) },
-                label = { Text("Wzrost") },
+                label = { Text(stringResource(R.string.profile_height)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
                 modifier = Modifier.fillMaxWidth(),
                 maxLines = 1,
@@ -173,7 +174,7 @@ fun ProfileContent(
             OutlinedTextField(
                 value = state.targetWeight,
                 onValueChange = { onAction(ProfileAction.WeightChanged(it)) },
-                label = { Text("Waga docelowa") },
+                label = { Text(stringResource(R.string.profile_target_weight)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
                 modifier = Modifier.fillMaxWidth(),
                 maxLines = 1,
@@ -245,7 +246,7 @@ fun ProfileContent(
                     //Text("Wybierz z galerii")
                     Icon(
                         painter = painterResource(R.drawable.ic_gallery_thumbnail),
-                        contentDescription = "Wybierz z galerii",
+                        contentDescription = stringResource(R.string.profile_pick_from_gallery),
                         modifier = Modifier.size(28.dp), // rozmiar samej ikonki
                         //tint = MaterialTheme.colorScheme.primary,
                     )
@@ -254,7 +255,7 @@ fun ProfileContent(
                     //Text("Zrób zdjęcie")
                     Icon(
                         painter = painterResource(R.drawable.ic_outline_add_a_photo), // tu możesz wrzucić inną ikonę aparatu
-                        contentDescription = "Zrób zdjęcie",
+                        contentDescription = stringResource(R.string.profile_take_a_photo),
                         modifier = Modifier.size(28.dp)
                     )
                 }
@@ -282,7 +283,7 @@ fun ProfileContent(
                     strokeWidth = 2.dp
                 )
             } else {
-                Text("Zapisz")
+                Text(stringResource(R.string.profile_save))
             }
         }
     }

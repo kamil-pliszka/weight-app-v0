@@ -5,17 +5,19 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import com.pl.myweightapp.R
 
 @Composable
 fun ConfirmationDialog(
-    title: String = "Confirmation",
-    text: String = "Are you sure?",
+    title: String = stringResource(R.string.confirmation_title),
+    text: String = stringResource(R.string.confirmation_are_you_sure),
     onConfirm: () -> Unit,
     //confirmContent: @Composable RowScope.() -> Unit = { Text("OK") },
-    confirmText : String = "OK",
+    confirmText : String = stringResource(R.string.confirmation_confitm_text),
     confirmColor: Color = Color.Unspecified,
     onCancel: () -> Unit,
-    cancelText : String = "Cancel",
+    cancelText : String = stringResource(R.string.confirmation_cancel_text),
     cancelColor: Color = Color.Unspecified,
 ) {
 

@@ -7,23 +7,29 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -87,33 +93,42 @@ fun SettingsScreen(
     } else {
 
         Column(
-            modifier = modifier.fillMaxSize(),
+            modifier = modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = CenterHorizontally
         ) {
             ListItem(
-                headlineContent = { Text("Ogólne") },
+                headlineContent = { Text(stringResource(R.string.settings_profile)) },
                 colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             )
-            /*DataColumn {
-                Text(text = "Ogolne dane wiek")
-                Text(text = "Ogolne dane wzrost")
-                Text(text = "Ogolne dane waga docelowa")
-            }*/
             ProfileComponent(
                 modifier = Modifier.fillMaxWidth(),
                 snackbarHostState = snackbarHostState
             )
 
             ListItem(
-                headlineContent = { Text("Kopia zapasowa i przywracanie") },
+                headlineContent = { Text(stringResource(R.string.settings_general)) },
+                colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            )
+            DataRow(Modifier.clickable {
+                viewModel.onAction(Action.OnLanguageClick)
+            }) {
+                Text(stringResource(R.string.settings_language))
+                Spacer(Modifier.width(24.dp))
+                Text(state.langDisplayName)
+            }
+
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_backup_and_recovery)) },
                 colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             )
 
             DataRow(Modifier.clickable {
                 launcherChooseFileExport.launch(viewModel.suggestedExportFileName())
             }) {
-                Text("Eksport do CSV")
+                Text(stringResource(R.string.settings_csv_export))
             }
             HorizontalDivider()
             DataRow(Modifier.clickable {
@@ -121,17 +136,17 @@ fun SettingsScreen(
                     arrayOf("text/csv", "application/csv", "text/comma-separated-values")
                 )
             }) {
-                Text("Import z CSV")
+                Text(stringResource(R.string.settings_csv_import))
             }
 
             ListItem(
-                headlineContent = { Text("Reset") },
+                headlineContent = { Text(stringResource(R.string.settings_reset)) },
                 colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             )
             DataRow(Modifier.clickable {
                 viewModel.onAction(Action.OnDeleteAllDataClick)
             }) {
-                Text("Usuń wszystkie dane", color = MaterialTheme.colorScheme.error)
+                Text(stringResource(R.string.settings_delete_all_data), color = MaterialTheme.colorScheme.error)
             }
 
         }
@@ -142,7 +157,7 @@ fun SettingsScreen(
                 .fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            Text("Processing csv..., please be patient", modifier = Modifier.offset(y = 64.dp))
+            Text(stringResource(R.string.settings_processing_csv_please_be_patient), modifier = Modifier.offset(y = 64.dp))
             val animatedProgress by animateFloatAsState(targetValue = state.csvProgress)
             LinearProgressIndicator(
                 progress = { animatedProgress },
@@ -159,33 +174,27 @@ fun SettingsScreen(
     }
     if (state.showDeleteConfirm) {
         ConfirmationDialog(
-            title = "Delete all data?",
-            text = "Are you sure you want to delete all data? This operation cannot be undone.",
+            title = stringResource(R.string.settings_delete_all_data_question),
+            text = stringResource(R.string.settings_delete_all_data_description),
             onConfirm = {
                 viewModel.onAction(Action.OnDeleteAllDataConfirm)
             },
-            confirmText = "Delete",
+            confirmText = stringResource(R.string.settings_delete_all_data_delete_button),
             confirmColor = MaterialTheme.colorScheme.error,
             onCancel = {
                 viewModel.onAction(Action.OnDeleteAllDataCancel)
             },
         )
     }
-}
 
-@Composable
-private inline fun DataColumn(
-    modifier: Modifier = Modifier,
-    content: @Composable ColumnScope.() -> Unit,
-) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.Start,
-    ) {
-        content()
+    if (state.showLanguageChooser) {
+        ChooseLangComponent(
+            modifier = Modifier,
+            onDismissRequest = { viewModel.onAction(Action.OnLanguageDismiss) },
+            onChooseLang = { viewModel.onAction(Action.OnLanguageChoose(it)) }
+        )
     }
+
 }
 
 @Composable
@@ -200,5 +209,57 @@ private inline fun DataRow(
         horizontalArrangement = Arrangement.Start,
     ) {
         content()
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ChooseLangComponent(
+    modifier: Modifier = Modifier,
+    onDismissRequest: () -> Unit,
+    onChooseLang: (String) -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState()
+
+    ModalBottomSheet(
+        modifier = modifier,
+        onDismissRequest = onDismissRequest,
+        sheetState = sheetState
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.choose_lang),
+                style = MaterialTheme.typography.titleLarge
+            )
+
+            LanguageItem(stringResource(R.string.lang_pl)) {
+                onChooseLang("pl")
+            }
+            LanguageItem(stringResource(R.string.lang_en)) {
+                onChooseLang("en")
+            }
+            Spacer(Modifier.height(24.dp))
+        }
+    }
+}
+
+@Composable
+fun LanguageItem(
+    label: String,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(vertical = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(label)
     }
 }

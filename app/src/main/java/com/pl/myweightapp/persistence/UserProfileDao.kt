@@ -7,6 +7,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
+import java.math.BigDecimal
 
 @Dao
 interface UserProfileDao {
@@ -21,4 +22,8 @@ interface UserProfileDao {
 
     @Query("DELETE FROM ${UserProfileEntity.TABLE}")
     suspend fun deleteAll()
+
+    @Query("SELECT lang FROM ${UserProfileEntity.TABLE} WHERE id = 0 LIMIT 1")
+    suspend fun getLang(): String?
+
 }

@@ -71,6 +71,7 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.core)
     implementation(libs.bundles.ktor)
     implementation(libs.mpandroidchart)
+    implementation(libs.androidx.appcompat)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

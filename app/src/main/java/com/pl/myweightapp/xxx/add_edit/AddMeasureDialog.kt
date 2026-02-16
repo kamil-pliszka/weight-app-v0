@@ -19,8 +19,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.pl.myweightapp.R
 import com.pl.myweightapp.xxx.toDateString
 import com.pl.myweightapp.xxx.toMillis
 import java.time.LocalDate
@@ -47,7 +49,7 @@ fun AddMeasureDialog(
                         Icon(
                             imageVector = Icons.Default.Close,
                             tint = MaterialTheme.colorScheme.primary,
-                            contentDescription = "Cancel"
+                            contentDescription = stringResource(R.string.add_measure_cancel)
                         )
                     }
                     TextButton(onClick = viewModel::onShowDateDialogAction) {
@@ -58,7 +60,7 @@ fun AddMeasureDialog(
                         Icon(
                             imageVector = Icons.Default.Check,
                             tint = MaterialTheme.colorScheme.primary,
-                            contentDescription = "OK"
+                            contentDescription = stringResource(R.string.add_measure_ok)
                         )
                     }
                 }
@@ -66,7 +68,7 @@ fun AddMeasureDialog(
             //dismissButton = {},
             title = {
                 Column {
-                    Text("Dodaj pomiar")
+                    Text(stringResource(R.string.add_measure_title))
                     HorizontalDivider()
                 }
             },

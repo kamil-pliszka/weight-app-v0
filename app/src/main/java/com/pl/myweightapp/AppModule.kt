@@ -1,10 +1,17 @@
 package com.pl.myweightapp
 
 import android.content.Context
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import androidx.room.Room
+import com.pl.myweightapp.core.Constants
 import com.pl.myweightapp.persistence.MyDatabase
 import com.pl.myweightapp.repositories.UserProfileRepository
 import com.pl.myweightapp.repositories.WeightMeasureRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 object AppModule {
 
@@ -24,6 +31,9 @@ object AppModule {
 
         weightMeasureRepository = WeightMeasureRepository(database.weightMeasureDao())
         userProfileRepository = UserProfileRepository(database.userProfileDao())
+        runBlocking {
+            initializeLangInternal()
+        }
     }
 
     // (6) Dostęp BD z obszaru całej aplikacji - zwraca instancję bazy danych
@@ -34,4 +44,11 @@ object AppModule {
     fun provideWeightMeasureRepository() = weightMeasureRepository
     fun provideUserProfileRepository() = userProfileRepository
 
+    private suspend fun initializeLangInternal() {
+        val lang = userProfileRepository.getLang() ?: Constants.DEFAULT_LANG
+        println("initializeLang : $lang")
+        AppCompatDelegate.setApplicationLocales(
+            LocaleListCompat.forLanguageTags(lang)
+        )
+    }
 }

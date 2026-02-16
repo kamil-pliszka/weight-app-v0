@@ -28,6 +28,7 @@ class NavigationViewModel : ViewModel() {
 
     private fun loadInitialBadges() {
         viewModelScope.launch {
+            //TODO - to jest wersja demo, ogarnąć
             launch(Dispatchers.IO) {
                 val count = initialHomeBadgeCount()
                 updateBadge(Screen.HomeScreen.route, count)

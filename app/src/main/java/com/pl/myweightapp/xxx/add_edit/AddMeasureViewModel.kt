@@ -56,9 +56,7 @@ class AddMeasureViewModel : ViewModel() {
 
     fun onShowDialogAction() {
         launchWithErrorHandling {
-            val value = withContext(Dispatchers.IO) {
-                AppModule.provideWeightMeasureRepository().findLastWeightMeasure()
-            }
+            val value = AppModule.provideWeightMeasureRepository().findLastWeightMeasure()
             if (value != null) {
                 _state.update { it.copy(lastWeight = value, currentWeightMeasure = value) }
             }
@@ -77,13 +75,11 @@ class AddMeasureViewModel : ViewModel() {
             choosenDate.toInstant()
         }
         launchWithErrorHandling {
-            withContext(Dispatchers.IO) {
-                AppModule.provideWeightMeasureRepository().insertMeasure(
-                    date = instantDate,
-                    weight = currentMeasure,
-                    unit = WeightUnit.KG
-                )
-            }
+            AppModule.provideWeightMeasureRepository().insertMeasure(
+                date = instantDate,
+                weight = currentMeasure,
+                unit = WeightUnit.KG
+            )
             _state.update { it.copy(showDialog = false) }
         }
     }

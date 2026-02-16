@@ -5,7 +5,9 @@ import com.pl.myweightapp.persistence.MyDatabase
 import com.pl.myweightapp.persistence.WeightMeasureDao
 import com.pl.myweightapp.persistence.WeightMeasureEntity
 import com.pl.myweightapp.persistence.WeightUnit
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.withContext
 import java.math.BigDecimal
 import java.time.Instant
 
@@ -16,7 +18,7 @@ class WeightMeasureRepository(val weightMeasureDao: WeightMeasureDao) {
         date: Instant,
         weight: BigDecimal,
         unit: WeightUnit = WeightUnit.KG
-    ) {
+    ) = withContext(Dispatchers.IO) {
         val entity = WeightMeasureEntity(
             date = date,
             weight = weight,
@@ -31,7 +33,7 @@ class WeightMeasureRepository(val weightMeasureDao: WeightMeasureDao) {
         date: Instant,
         weight: BigDecimal,
         unit: WeightUnit
-    ) {
+    ) = withContext(Dispatchers.IO) {
         weightMeasureDao.update(
             WeightMeasureEntity(
                 id = id,
@@ -42,7 +44,7 @@ class WeightMeasureRepository(val weightMeasureDao: WeightMeasureDao) {
         )
     }
 
-    suspend fun update(entity: WeightMeasureEntity) {
+    suspend fun update(entity: WeightMeasureEntity) = withContext(Dispatchers.IO) {
         weightMeasureDao.update(entity)
     }
 
@@ -50,7 +52,7 @@ class WeightMeasureRepository(val weightMeasureDao: WeightMeasureDao) {
         db: MyDatabase,
         toInsert: List<WeightMeasureEntity>,
         toUpdate: List<WeightMeasureEntity>
-    ) {
+    ) = withContext(Dispatchers.IO) {
         db.withTransaction {
             toInsert.forEach {entity ->
                 weightMeasureDao.save(entity)
@@ -62,12 +64,12 @@ class WeightMeasureRepository(val weightMeasureDao: WeightMeasureDao) {
     }
 
 
-    suspend fun findLastWeightMeasure(): BigDecimal? {
-        return weightMeasureDao.findLastWeightMeasure()
+    suspend fun findLastWeightMeasure(): BigDecimal? = withContext(Dispatchers.IO) {
+        weightMeasureDao.findLastWeightMeasure()
     }
 
-    suspend fun findWeightMeasureHistory(): List<WeightMeasureEntity> {
-        return weightMeasureDao.findWeightMeasureHistory()
+    suspend fun findWeightMeasureHistory(): List<WeightMeasureEntity> = withContext(Dispatchers.IO) {
+        weightMeasureDao.findWeightMeasureHistory()
     }
 
     fun observeWeightMeasureHistory(): Flow<List<WeightMeasureEntity>> =
@@ -75,14 +77,14 @@ class WeightMeasureRepository(val weightMeasureDao: WeightMeasureDao) {
 
     fun observeById(id: Long): Flow<WeightMeasureEntity?> = weightMeasureDao.observeById(id)
 
-    suspend fun delete(id: Long) {
+    suspend fun delete(id: Long) = withContext(Dispatchers.IO) {
         val rows = weightMeasureDao.deleteById(id)
         if (rows == 0) {
             throw IllegalStateException("Delete failed: id=$id not found")
         }
     }
 
-    suspend fun deleteAll() {
+    suspend fun deleteAll() = withContext(Dispatchers.IO) {
         weightMeasureDao.deleteAll()
     }
 

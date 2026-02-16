@@ -26,9 +26,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearWavyProgressIndicator
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SnackbarDuration
@@ -119,7 +118,6 @@ fun HomeScreen(
 }
 
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun HomeScreenContent(
     modifier: Modifier = Modifier,
@@ -186,12 +184,12 @@ fun HomeScreenContent(
                     )
                 )
                 Text(
-                    "Processing..., please be patient",
+                    stringResource(R.string.home_processing_please_be_patient),
                     fontSize = 14.sp,
                     modifier = Modifier.offset(y = 24.dp)
                 )
                 //val animatedProgress by animateFloatAsState(targetValue = state.progress)
-                LinearWavyProgressIndicator(
+                LinearProgressIndicator(
                     //progress = { state.progress },
                     progress = { progress },
                     modifier = Modifier
@@ -219,11 +217,11 @@ fun LegendTop(modifier: Modifier = Modifier, state: UiState) {
         ) {
             val unitStr = state.unit.name.lowercase()
             Column(horizontalAlignment = CenterHorizontally) {
-                Text("Start")
+                Text(stringResource(R.string.home_legend_start))
                 Text("${state.startWeight?.let { "%.1f".format(it) } ?: "–"} $unitStr")
             }
             Column(horizontalAlignment = CenterHorizontally) {
-                Text("Aktualnie")
+                Text(stringResource(R.string.home_legend_current))
                 Text(
                     "${state.currentWeight?.let { "%.1f".format(it) } ?: "–"} $unitStr",
                     fontWeight = FontWeight.Bold,
@@ -231,7 +229,7 @@ fun LegendTop(modifier: Modifier = Modifier, state: UiState) {
                 )
             }
             Column(horizontalAlignment = CenterHorizontally) {
-                Text("Cel")
+                Text(stringResource(R.string.home_legend_target))
                 Text("${state.destinationWeight?.let { "%.1f".format(it) } ?: "–"} $unitStr")
             }
         }
@@ -255,13 +253,13 @@ fun LegendBottom(modifier: Modifier = Modifier, state: UiState) {
             else -> state.period.label()
         }
         Column(horizontalAlignment = CenterHorizontally) {
-            Text("Zmiana $periodStr")
+            Text(stringResource(R.string.home_legend_change, periodStr))
             Text("${state.periodWeightChange?.let { "%+.1f".format(it) } ?: "–"} $unitStr")
         }
         Column(horizontalAlignment = CenterHorizontally) {
         }
         Column(horizontalAlignment = CenterHorizontally) {
-            Text("Pozostało")
+            Text(stringResource(R.string.home_legend_to_target))
             Text("${state.toDestinationWeight?.let { "%.1f".format(it) } ?: "–"} $unitStr")
         }
     }
@@ -304,7 +302,7 @@ fun ChartImageContent(
             if (state.chartBitmap != null) {
                 Image(
                     painter = BitmapPainter(state.chartBitmap),
-                    contentDescription = "WeightGraph",
+                    contentDescription = stringResource(R.string.home_weight_graph),
                     modifier = Modifier
                         .fillMaxHeight()
                         .onSizeChanged { sz -> println("new size:img:$sz") },
@@ -313,7 +311,7 @@ fun ChartImageContent(
             } else {
                 Image(
                     painter = painterResource(id = R.drawable.ic_chart_trend_down),
-                    contentDescription = "WeightGraph",
+                    contentDescription = stringResource(R.string.home_weight_graph),
                     modifier = Modifier
                         .size(200.dp)
                         .align(Alignment.Center),
@@ -393,7 +391,7 @@ fun MovingAveragesComponent(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
 
-                    Text("Moving Averages", fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.home_moving_averages), fontWeight = FontWeight.Bold)
 
                     MovingAverageSlider(
                         label = "MA1",
@@ -416,7 +414,7 @@ fun MovingAveragesComponent(
                         TextButton(
                             onClick = { showMaPopup = false }
                         ) {
-                            Text("Cancel")
+                            Text(stringResource(R.string.home_ma_cancel))
                         }
                         Spacer(Modifier.width(8.dp))
                         Button(
@@ -425,7 +423,7 @@ fun MovingAveragesComponent(
                                 showMaPopup = false
                             }
                         ) {
-                            Text("Apply")
+                            Text(stringResource(R.string.home_ma_apply))
                         }
                     }
                 }

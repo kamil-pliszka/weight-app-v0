@@ -52,7 +52,7 @@ fun HistoryScreen(
                     .fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                Text("Brak pomiarów historycznych")
+                Text(stringResource(R.string.history_no_measurements))
             }
         }
 
@@ -116,12 +116,15 @@ fun HistoryScreen(
 
     state.deletingItem?.let { itemUi ->
         ConfirmationDialog(
-            title = "Delete measurement?",
-            text = "Are you sure you want to delete measurement ${itemUi.date.formatted}?",
+            title = stringResource(R.string.history_delete_measurement),
+            text = stringResource(
+                R.string.history_are_you_sure_you_want_to_delete_measurement,
+                itemUi.date.formatted
+            ),
             onConfirm = {
                 viewModel.onAction(HistoryAction.OnConfirmDeleteAction(itemUi.id))
             },
-            confirmText = "Delete",
+            confirmText = stringResource(R.string.history_delete_button),
             confirmColor = MaterialTheme.colorScheme.error,
             onCancel = {
                 viewModel.onAction(HistoryAction.OnCancelDeleteAction)

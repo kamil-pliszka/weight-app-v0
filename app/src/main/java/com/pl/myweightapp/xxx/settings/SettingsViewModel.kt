@@ -4,10 +4,13 @@ import android.app.Application
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.runtime.Immutable
+import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.pl.myweightapp.AppModule
+import com.pl.myweightapp.R
 import com.pl.myweightapp.core.Constants
 import com.pl.myweightapp.xxx.csv.CsvParseException
 import com.pl.myweightapp.xxx.csv.exportWeightCsv
@@ -31,7 +34,10 @@ data class UiState(
     val isLoading: Boolean = false,
     val isCsvProcessing: Boolean = false,
     val csvProgress: Float = 0f, // 0..1
-    val showDeleteConfirm: Boolean = false
+    val showDeleteConfirm: Boolean = false,
+    val showLanguageChooser: Boolean = false,
+    val langTag: String = "",
+    val langDisplayName: String = "",
 )
 
 sealed interface Action {
@@ -40,6 +46,9 @@ sealed interface Action {
     object OnDeleteAllDataClick : Action      // klik przycisku
     object OnDeleteAllDataConfirm : Action    // potwierdzenie
     object OnDeleteAllDataCancel : Action     // anulowanie
+    object OnLanguageClick : Action
+    object OnLanguageDismiss : Action
+    data class OnLanguageChoose(val lang: String) : Action
 }
 
 sealed interface UiEvent {
@@ -56,19 +65,26 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val _events = Channel<UiEvent>(Channel.BUFFERED)
     val events = _events.receiveAsFlow()
 
+    init {
+        loadInitialLanguage()
+    }
+
 
     fun onAction(action: Action) {
         when (action) {
             Action.OnDeleteAllDataClick -> {
                 _state.update { it.copy(showDeleteConfirm = true) }
             }
+
             Action.OnDeleteAllDataCancel -> {
                 _state.update { it.copy(showDeleteConfirm = false) }
             }
+
             Action.OnDeleteAllDataConfirm -> {
                 _state.update { it.copy(showDeleteConfirm = false) }
                 processDeleteAllData()
             }
+
             is Action.OnCsvImport -> {
                 //_state.update { it.copy(showImportCsvPicker = false) }
                 //uri jest null gdy nie wybrano pliku, lub użyto przycisku back
@@ -77,6 +93,20 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
             is Action.OnCsvExport -> {
                 processCsvExport(action.uri)
+            }
+
+            Action.OnLanguageClick -> {
+                _state.update { it.copy(showLanguageChooser = true) }
+            }
+
+            Action.OnLanguageDismiss -> {
+                _state.update { it.copy(showLanguageChooser = false) }
+            }
+
+            is Action.OnLanguageChoose -> {
+                println("lang: ${action.lang}")
+                setLanguage(action.lang)
+                _state.update { it.copy(showLanguageChooser = false) }
             }
         }
     }
@@ -95,10 +125,8 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             _state.update { it.copy(isCsvProcessing = true) }
             try {
-                val entriesCount = withContext(Dispatchers.IO) {
-                    importWeightCsv(context, uri) { progress ->
-                        _state.update { it.copy(csvProgress = progress) }
-                    }
+                val entriesCount = importWeightCsv(context, uri) { progress ->
+                    _state.update { it.copy(csvProgress = progress) }
                 }
                 sendEvent(UiEvent.Info("Zaimportowano $entriesCount wpisów"))
             } catch (e: CancellationException) {
@@ -129,10 +157,8 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             _state.update { it.copy(isCsvProcessing = true) }
             try {
-                val entriesCount = withContext(Dispatchers.IO) {
-                    exportWeightCsv(context, uri) { progress ->
-                        _state.update { it.copy(csvProgress = progress) }
-                    }
+                val entriesCount = exportWeightCsv(context, uri) { progress ->
+                    _state.update { it.copy(csvProgress = progress) }
                 }
                 sendEvent(UiEvent.Info("Wyeksportowano $entriesCount wpisów do pliku: $filename"))
             } catch (e: CancellationException) {
@@ -152,24 +178,11 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
             try {
-                withContext(Dispatchers.IO) {
-                    //usuniecie pomiarów
-                    AppModule.provideWeightMeasureRepository().deleteAll()
-                    //usunięcie profilu
-                    AppModule.provideUserProfileRepository().deleteAll()
-                    //usunięcie wygenerowanego wykresu
-                    val context = (getApplication() as Context)
-                    val fileChart = File(context.filesDir, Constants.WEIGHT_CHART_FILENAME)
-                    if (fileChart.exists()) {
-                        println("Delete ${Constants.WEIGHT_CHART_FILENAME}")
-                        fileChart.delete()
-                    }
-                    val fileProfile = File(context.filesDir, Constants.PROFILE_PHOTO_FILENAME)
-                    if (fileProfile.exists()) {
-                        println("Delete ${Constants.PROFILE_PHOTO_FILENAME}")
-                        fileProfile.delete()
-                    }
-                }
+                //usuniecie pomiarów
+                AppModule.provideWeightMeasureRepository().deleteAll()
+                //usunięcie profilu
+                AppModule.provideUserProfileRepository().deleteAll()
+                deleteAppFiles()
                 sendEvent(UiEvent.Info("Wszystkie dane zostały usunięte"))
             } catch (e: CancellationException) {
                 throw e
@@ -182,4 +195,74 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    private suspend fun deleteAppFiles() = withContext(Dispatchers.IO) {
+        //usunięcie wygenerowanego wykresu
+        val context = (getApplication() as Context)
+        val fileChart = File(context.filesDir, Constants.WEIGHT_CHART_FILENAME)
+        if (fileChart.exists()) {
+            println("Delete ${Constants.WEIGHT_CHART_FILENAME}")
+            fileChart.delete()
+        }
+        val fileProfile = File(context.filesDir, Constants.PROFILE_PHOTO_FILENAME)
+        if (fileProfile.exists()) {
+            println("Delete ${Constants.PROFILE_PHOTO_FILENAME}")
+            fileProfile.delete()
+        }
+    }
+
+    fun setLanguage(tag: String) {
+        println("setLanguage to: $tag")
+        AppCompatDelegate.setApplicationLocales(
+            LocaleListCompat.forLanguageTags(tag)
+        )
+        viewModelScope.launch {
+            try {
+                AppModule.provideUserProfileRepository().updateLang(tag)
+                loadInitialLanguage()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.e("setLanguage", e.message, e)
+                sendEvent(UiEvent.Error("Zapis nie powiodł się: ${e.message}"))
+            }
+        }
+        /*
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val context = (getApplication() as Context)
+            context.getSystemService(LocaleManager::class.java)
+                .applicationLocales = LocaleList.forLanguageTags(tag)
+        }*/
+    }
+
+    private fun loadInitialLanguage() {
+        viewModelScope.launch {
+            try {
+                val savedLang = AppModule.provideUserProfileRepository().getLang()
+                println("loadInitialLanguage: $savedLang")
+                val langTag = savedLang ?: Constants.DEFAULT_LANG // fallback
+                _state.update {
+                    it.copy(
+                        langTag = langTag,
+                        langDisplayName = langDisplayName(langTag)
+                    )
+                }
+                println("state: ${_state.value}")
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.e("InitLang", e.message, e)
+                sendEvent(UiEvent.Error("Pobranie języka nie powiodło się: ${e.message}"))
+            }
+        }
+    }
+
+    private fun langDisplayName(tag: String): String {
+        val context = getApplication() as Context
+        return when (tag) {
+            "pl" -> context.getString(R.string.lang_pl)
+            "en" -> context.getString(R.string.lang_en)
+            else -> tag
+        }
+    }
 }
+

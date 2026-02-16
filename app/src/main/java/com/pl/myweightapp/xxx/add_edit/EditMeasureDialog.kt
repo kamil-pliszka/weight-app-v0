@@ -75,21 +75,21 @@ fun EditMeasureDialog(
                             Icon(
                                 imageVector = Icons.Default.Close,
                                 tint = MaterialTheme.colorScheme.primary,
-                                contentDescription = "Cancel"
+                                contentDescription = stringResource(R.string.edit_measure_cancel)
                             )
                         }
                         TextButton(onClick = viewModel::onDeleteAction) {
                             Icon(
                                 imageVector = Icons.Default.Delete,
                                 tint = MaterialTheme.colorScheme.error,
-                                contentDescription = "Delete"
+                                contentDescription = stringResource(R.string.edit_measure_delete)
                             )
                         }
                         TextButton(onClick = viewModel::onSaveAction) {
                             Icon(
                                 imageVector = Icons.Default.Check,
                                 tint = MaterialTheme.colorScheme.primary,
-                                contentDescription = "OK"
+                                contentDescription = stringResource(R.string.edit_measure_ok)
                             )
                         }
                     }
@@ -97,7 +97,7 @@ fun EditMeasureDialog(
                 //dismissButton = {},
                 title = {
                     Column {
-                        Text("Edytuj pomiar: ${state.date.toDateString()}")
+                        Text(stringResource(R.string.edit_measure_title, state.date.toDateString()))
                         HorizontalDivider()
                     }
                 },
@@ -111,10 +111,10 @@ fun EditMeasureDialog(
 
             if (state.showDeleteConfirm) {
                 ConfirmationDialog(
-                    title = "Delete measurement?",
-                    text = "Are you sure you want to delete this measurement?",
+                    title = stringResource(R.string.edit_measure_delete_measurement),
+                    text = stringResource(R.string.edit_measure_are_you_sure_you_want_to_delete_this_measurement),
                     onConfirm = viewModel::onConfirmDelete,
-                    confirmText = "Delete",
+                    confirmText = stringResource(R.string.edit_measure_delete_button),
                     confirmColor = MaterialTheme.colorScheme.error,
                     onCancel = viewModel::onCancelDelete,
                 )

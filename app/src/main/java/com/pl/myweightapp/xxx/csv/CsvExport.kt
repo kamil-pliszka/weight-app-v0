@@ -5,12 +5,14 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import com.pl.myweightapp.AppModule
 import com.pl.myweightapp.repositories.sortWeightMeasureHistory
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 suspend fun exportWeightCsv(
     context: Context,
     uri: Uri,
     onProgressChange: (Float) -> Unit
-): Int {
+): Int = withContext(Dispatchers.IO) {
     val repo = AppModule.provideWeightMeasureRepository()
     val historyEntities = sortWeightMeasureHistory(repo.findWeightMeasureHistory())
     println("history entities : ${historyEntities.size}")
@@ -26,7 +28,7 @@ suspend fun exportWeightCsv(
         }
         writer.flush()
     }
-    return historyEntities.size
+    historyEntities.size //return
 }
 
 fun getFileNameFromUri(context: Context, uri: Uri): String? {

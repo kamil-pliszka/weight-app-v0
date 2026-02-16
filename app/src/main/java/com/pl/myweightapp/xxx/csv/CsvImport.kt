@@ -6,6 +6,8 @@ import com.pl.myweightapp.AppModule
 import com.pl.myweightapp.persistence.WeightMeasureEntity
 import com.pl.myweightapp.persistence.WeightUnit
 import com.pl.myweightapp.xxx.toLocalDate
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 private fun WeightUnitCsv.toEntityWeightUnit(): WeightUnit {
     return when (this) {
@@ -18,7 +20,7 @@ suspend fun importWeightCsv(
     context: Context,
     uri: Uri,
     onProgressChange: (Float) -> Unit
-): Int {
+): Int = withContext(Dispatchers.IO) {
     val entriesCsv = parseWeightCsv(context, uri)
     println("entriesCsv : ${entriesCsv.size}")
     val repo = AppModule.provideWeightMeasureRepository()
@@ -59,7 +61,7 @@ suspend fun importWeightCsv(
     }
     repo.import(AppModule.provideMyDatabase(), toInsert, toUpdate)
     println("Imported")
-    return entriesCsv.size
+    entriesCsv.size //return
 }
 
 private fun findEntityOnDate(
