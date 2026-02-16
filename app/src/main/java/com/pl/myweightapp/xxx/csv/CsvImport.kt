@@ -30,15 +30,19 @@ suspend fun importWeightCsv(
             list.sortedBy { it.id } // rosnąco po id
         }
     println("groupped by date size : ${existingEntitiesByDate.size}")
+    val toInsert = mutableListOf<WeightMeasureEntity>()
+    val toUpdate = mutableListOf<WeightMeasureEntity>()
 
     entriesCsv.forEachIndexed { idx, csvEntry ->
         val existingOnDate = existingEntitiesByDate[csvEntry.timestamp.toLocalDate()]
         if (existingOnDate == null) {
-            println("Inserting measure on date: ${csvEntry.timestamp}, weight: ${csvEntry.value}, idx = $idx")
-            repo.insertMeasure(
-                csvEntry.timestamp,
-                csvEntry.value,
-                csvEntry.unit.toEntityWeightUnit()
+            println("Insert measure on date: ${csvEntry.timestamp}, weight: ${csvEntry.value}, idx = $idx")
+            toInsert.add(
+                WeightMeasureEntity(
+                    date = csvEntry.timestamp,
+                    weight = csvEntry.value,
+                    unit = csvEntry.unit.toEntityWeightUnit()
+                )
             )
         } else {
             println("Update measure on date: ${csvEntry.timestamp.toLocalDate()}, weight: ${csvEntry.value}, idx = $idx")
@@ -48,11 +52,13 @@ suspend fun importWeightCsv(
                 weight = csvEntry.value,
                 unit = csvEntry.unit.toEntityWeightUnit()
             )
-            repo.update(updatedWeightEntity)
+            toUpdate.add(updatedWeightEntity)
         }
         onProgressChange((idx + 1).toFloat() / entriesCsv.size)
         //_state.update { it.copy(csvProgress = (idx + 1).toFloat() / entriesCsv.size) }
     }
+    repo.import(AppModule.provideMyDatabase(), toInsert, toUpdate)
+    println("Imported")
     return entriesCsv.size
 }
 

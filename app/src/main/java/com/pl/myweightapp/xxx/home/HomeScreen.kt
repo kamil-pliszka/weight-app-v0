@@ -283,6 +283,9 @@ fun ChartImageContent(
     LaunchedEffect(scrollState.maxValue) {
         scrollState.scrollTo(scrollState.maxValue)
     }
+//    val density = LocalDensity.current
+//    val px = with(density) { 4.dp.toPx() }
+//    println("ChartImageContent.padding: 4dp = ${px}px")
     Box(
         modifier = modifier
             .padding(4.dp)
@@ -291,6 +294,7 @@ fun ChartImageContent(
         Box(
             modifier = Modifier
                 .matchParentSize()
+                //.onSizeChanged { sz -> println("new size:box:$sz") }
                 //.border(width = Dp.Hairline, color = Color.Magenta)
                 //.clipToBounds()
                 .horizontalScroll(scrollState),
@@ -303,7 +307,7 @@ fun ChartImageContent(
                     contentDescription = "WeightGraph",
                     modifier = Modifier
                         .fillMaxHeight()
-                        .onSizeChanged { sz -> println("new size:$sz") },
+                        .onSizeChanged { sz -> println("new size:img:$sz") },
                     contentScale = ContentScale.FillHeight
                 )
             } else {

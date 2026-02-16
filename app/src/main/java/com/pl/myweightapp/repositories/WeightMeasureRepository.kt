@@ -1,5 +1,7 @@
 package com.pl.myweightapp.repositories
 
+import androidx.room.withTransaction
+import com.pl.myweightapp.persistence.MyDatabase
 import com.pl.myweightapp.persistence.WeightMeasureDao
 import com.pl.myweightapp.persistence.WeightMeasureEntity
 import com.pl.myweightapp.persistence.WeightUnit
@@ -39,8 +41,24 @@ class WeightMeasureRepository(val weightMeasureDao: WeightMeasureDao) {
             )
         )
     }
+
     suspend fun update(entity: WeightMeasureEntity) {
         weightMeasureDao.update(entity)
+    }
+
+    suspend fun import(
+        db: MyDatabase,
+        toInsert: List<WeightMeasureEntity>,
+        toUpdate: List<WeightMeasureEntity>
+    ) {
+        db.withTransaction {
+            toInsert.forEach {entity ->
+                weightMeasureDao.save(entity)
+            }
+            toUpdate.forEach {entity ->
+                weightMeasureDao.update(entity)
+            }
+        }
     }
 
 

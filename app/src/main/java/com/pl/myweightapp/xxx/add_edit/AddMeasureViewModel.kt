@@ -55,7 +55,16 @@ class AddMeasureViewModel : ViewModel() {
     }
 
     fun onShowDialogAction() {
-        _state.update { it.copy(showDialog = true) }
+        launchWithErrorHandling {
+            val value = withContext(Dispatchers.IO) {
+                AppModule.provideWeightMeasureRepository().findLastWeightMeasure()
+            }
+            if (value != null) {
+                _state.update { it.copy(lastWeight = value, currentWeightMeasure = value) }
+            }
+            _state.update { it.copy(showDialog = true) }
+        }
+        println("ShowDialogAction")
     }
 
 
@@ -79,20 +88,20 @@ class AddMeasureViewModel : ViewModel() {
         }
     }
 
-    init {
-        loadLastWeight()
-    }
-
-    private fun loadLastWeight() {
-        launchWithErrorHandling {
-            val value = withContext(Dispatchers.IO) {
-                AppModule.provideWeightMeasureRepository().findLastWeightMeasure()
-            }
-            if (value != null) {
-                _state.update { it.copy(lastWeight = value, currentWeightMeasure = value) }
-            }
-        }
-    }
+//    init {
+//        loadLastWeight()
+//    }
+//
+//    private fun loadLastWeight() {
+//        launchWithErrorHandling {
+//            val value = withContext(Dispatchers.IO) {
+//                AppModule.provideWeightMeasureRepository().findLastWeightMeasure()
+//            }
+//            if (value != null) {
+//                _state.update { it.copy(lastWeight = value, currentWeightMeasure = value) }
+//            }
+//        }
+//    }
 
     fun onDialogDismissAction() {
         _state.update { it.copy(showDialog = false) }

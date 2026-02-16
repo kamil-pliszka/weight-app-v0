@@ -1,6 +1,7 @@
 package com.pl.myweightapp.xxx.chart
 
 import android.content.Context
+import android.content.res.Resources
 import android.graphics.Bitmap
 import android.view.View
 import androidx.compose.ui.graphics.Color
@@ -31,6 +32,7 @@ fun generateChartBitmap(
     destinationValue: Float?,
     movingAverage1: Int? = null,
     movingAverage2: Int? = null,
+    extPadding: Int? = 8
 ): Bitmap {
 
     val chart = LineChart(context).apply {
@@ -152,10 +154,13 @@ fun generateChartBitmap(
 
     chart.data = LineData(dataSets.toList())
 
-    val height = 1600
-    //szerokość 800px na około 3M, czyli rok to ok 3200px
-    val width = (periodOnChartDays * 4000 / 365).toInt().coerceIn(1000, 6000)
-    println("chart width: $width")
+    val padding = Resources.getSystem().displayMetrics.density * (extPadding?:0)
+    println("image padding: $padding")
+    val screenWidth = Resources.getSystem().displayMetrics.widthPixels-padding.toInt()
+    //val screenHeight = Resources.getSystem().displayMetrics.heightPixels
+    val height = 1980
+    val width = (periodOnChartDays * 3.0 * screenWidth / 365).toInt().coerceIn(screenWidth, 6*screenWidth)
+    println("chart size: ${width}x$height")
     chart.measure(
         View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
         View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY)
