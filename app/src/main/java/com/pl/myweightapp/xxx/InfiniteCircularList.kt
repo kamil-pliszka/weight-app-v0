@@ -1,5 +1,6 @@
 package com.pl.myweightapp.xxx
 
+import android.util.Log
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -51,7 +52,7 @@ fun InfiniteCircularListPreview() {
             textColor = Color.LightGray,
             selectedTextColor = Color.Black,
             onItemSelected = { i, item ->
-                println("Item selected: $i, $item")
+                Log.d("","Item selected: $i, $item")
             }
         )
     }
@@ -91,10 +92,10 @@ fun <T> InfiniteCircularList(
 //        mutableStateOf(items)
 //    }
     //var initialized by rememberSaveable { mutableStateOf(false) }
-    //println("recomposition $xxxName: sel = $selectedItem, init = $initialized")
+    //Log.d(TAG,"recomposition $xxxName: sel = $selectedItem, init = $initialized")
     val key2 = if (xxxAutoScrollable) selectedItem else 0
     LaunchedEffect(items,  key2) {
-        //println("LaunchedEffect $xxxName")
+        //Log.d(TAG,"LaunchedEffect $xxxName")
         var targetIndex = items.indexOf(selectedItem) - 1
         targetIndex += ((Int.MAX_VALUE / 2) / items.size) * items.size
         //itemsState = items

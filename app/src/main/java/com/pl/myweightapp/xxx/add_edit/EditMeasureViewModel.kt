@@ -1,5 +1,6 @@
 package com.pl.myweightapp.xxx.add_edit
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pl.myweightapp.AppModule
@@ -38,6 +39,7 @@ sealed interface UiEvent {
     data class Error(val message: String) : UiEvent
 }
 
+private const val TAG = "EditMeasureVM"
 class EditMeasureViewModel(
     val itemId: Long,
 ) : ViewModel() {
@@ -57,7 +59,7 @@ class EditMeasureViewModel(
             AppModule.provideWeightMeasureRepository()
                 .observeById(itemId)
                 .collect { entity ->
-                    println("Got refreshed entity: $itemId")
+                    Log.d(TAG,"Got refreshed entity: $itemId")
                     if (entity == null) {
                         _state.value = EditMeasureUiState.Deleted
                     } else {

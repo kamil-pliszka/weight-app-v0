@@ -1,5 +1,6 @@
 package com.pl.myweightapp.xxx.settings
 
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -50,6 +51,7 @@ import com.pl.myweightapp.core.presentation.util.ObserveAsEvents
 import com.pl.myweightapp.persistence.Gender
 import java.io.File
 
+private const val TAG = "ProfileComponent"
 
 @Composable
 fun ProfileComponent(
@@ -209,7 +211,7 @@ fun ProfileContent(
             ) {
                 when {
                     state.photoBitmap != null -> {
-                        println("Load avatar from bitmap")
+                        Log.d(TAG,"Load avatar from bitmap")
                         Image(
                             painter = BitmapPainter(state.photoBitmap),
                             contentDescription = "Avatar",
@@ -222,11 +224,11 @@ fun ProfileContent(
                         )
                     }
                     state.isLoading -> {
-                        println("CircularProgressIndicator")
+                        Log.d(TAG,"CircularProgressIndicator")
                         CircularProgressIndicator(modifier = Modifier.size(24.dp))
                     }
                     state.photoPath == null -> {
-                        println("Load avatar from resource")
+                        Log.d(TAG,"Load avatar from resource")
                         Image(
                             painter = painterResource(R.drawable.ic_face3),
                             contentDescription = "Avatar",
@@ -304,7 +306,7 @@ fun ProfilePreview() {
     ProfileContent(
         state = fakeState,
         onAction = { action ->
-            println("got action: $action")
+            Log.d(TAG,"got action: $action")
         }
     )
 }

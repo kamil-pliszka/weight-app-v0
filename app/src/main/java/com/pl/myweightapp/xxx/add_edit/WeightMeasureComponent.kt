@@ -1,5 +1,6 @@
 package com.pl.myweightapp.xxx.add_edit
 
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,6 +21,7 @@ import com.pl.myweightapp.xxx.InfiniteCircularList
 import java.math.BigDecimal
 import java.math.RoundingMode
 
+private const val TAG = "WeightMeasureComponent"
 @Composable
 fun WeightMeasureComponent(
     modifier: Modifier = Modifier,
@@ -63,7 +65,7 @@ fun WeightMeasureComponent(
             selectedTextColor = selectedTextColor,
             contentAlignment = Alignment.CenterEnd,
             onItemSelected = { _, item ->
-                println("Integer selected: $item, $currentFrac")
+                Log.d(TAG,"Integer selected: $item, $currentFrac")
                 currentInt = item
                 onMeasureChanged(BigDecimal(currentInt) + BigDecimal(currentFrac).movePointLeft(1))
             }
@@ -86,14 +88,14 @@ fun WeightMeasureComponent(
             selectedTextColor = selectedTextColor,
             contentAlignment = Alignment.CenterStart,
             onItemSelected = { _, item ->
-                println("Fracction selected: $currentInt, $item, $currentFrac")
+                Log.d(TAG,"Fracction selected: $currentInt, $item, $currentFrac")
                 if (item < 2 && currentFrac > 7) {
                     //moveUP
-                    println("moveUP")
+                    Log.d(TAG,"moveUP")
                     //currentInt = currentInt + 1
                 } else if (item > 7 && currentFrac < 2) {
                     //moveDown
-                    println("moveDown")
+                    Log.d(TAG,"moveDown")
                     //currentInt = currentInt - 1
                 }
                 currentFrac = item

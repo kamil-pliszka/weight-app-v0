@@ -1,7 +1,14 @@
 package com.pl.myweightapp.navigation
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.pl.myweightapp.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -9,8 +16,36 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class NavigationViewModel : ViewModel() {
-    private val _state = MutableStateFlow<List<BottomNavItem>>(BOTTOM_NAV)
+data class BottomNavItem(
+    val nameResId: Int,
+    val route: String,
+    val icon: ImageVector,
+    val badgeCount: Int = 0
+)
+
+
+class NavigationViewModel(application: Application) : AndroidViewModel(application) {
+    private val _state = MutableStateFlow(
+        listOf(
+            BottomNavItem(
+                nameResId = R.string.navigation_home,
+                route = Screen.HomeScreen.route,
+                icon = Icons.Default.Home,
+            ),
+            BottomNavItem(
+                nameResId = R.string.navigation_history,
+                route = Screen.HistoryScreen.route,
+                //icon = Icons.Default.Notifications,
+                icon = Icons.AutoMirrored.Filled.List,
+            ),
+            BottomNavItem(
+                nameResId = R.string.navigation_settings,
+                route = Screen.SettingsScreen.route,
+                icon = Icons.Default.Settings,
+            )
+        )
+    )
+
     //val state = _state.asStateFlow()
 //    val state = _state
 //        .onStart { loadInitialBadges() }
@@ -20,6 +55,7 @@ class NavigationViewModel : ViewModel() {
 //            BOTTOM_NAV
 //        )
     val state = _state.asStateFlow()
+
 
     init {
         loadInitialBadges()
@@ -48,17 +84,17 @@ class NavigationViewModel : ViewModel() {
 
     private suspend fun initialHomeBadgeCount(): Int {
         delay(3000)
-        return 1;
+        return 1
     }
 
     private suspend fun initialHistoryBadgeCount(): Int {
         delay(1800)
-        return 0;
+        return 0
     }
 
     private suspend fun initialSettingsBadgeCount(): Int {
         delay(1000)
-        return 13;
+        return 13
     }
 
     fun decreaseBadge(route: String) {

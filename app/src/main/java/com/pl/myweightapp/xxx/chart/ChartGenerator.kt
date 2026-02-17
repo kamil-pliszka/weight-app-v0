@@ -3,6 +3,7 @@ package com.pl.myweightapp.xxx.chart
 import android.content.Context
 import android.content.res.Resources
 import android.graphics.Bitmap
+import android.util.Log
 import android.view.View
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -25,14 +26,15 @@ data class Measurement(
     val value: Float
 )
 
+private const val TAG = "ChartGenerator"
 fun generateChartBitmap(
     context: Context,
     totalMeasurements: List<Measurement>,//muszą już być posortowane w kolejności rosnąco
     startIdx: Int,
+    widthPx: Int, heightPx: Int,
     destinationValue: Float?,
     movingAverage1: Int? = null,
     movingAverage2: Int? = null,
-    extPadding: Int? = 8
 ): Bitmap {
 
     val chart = LineChart(context).apply {
@@ -47,7 +49,7 @@ fun generateChartBitmap(
     val startMillis = measurementsOnChart.first().timestamp.toEpochMilli()
     val periodOnChartDays = (measurementsOnChart.last().timestamp.toEpochMilli() -
             measurementsOnChart.first().timestamp.toEpochMilli()) / (1000 * 60 * 60 * 24)
-    println("periodOnChartDays : $periodOnChartDays")
+    Log.d(TAG,"periodOnChartDays : $periodOnChartDays")
     val totalEnties = createEntries(totalMeasurements, startMillis)
     val entries = totalEnties.subList(startIdx, totalEnties.size)
 
@@ -60,10 +62,10 @@ fun generateChartBitmap(
         //setCenterAxisLabels(true)
         if (periodOnChartDays < 100) {
             setLabelCount(5, true)
-            println("Set labelCount = 5")
+            Log.d(TAG,"Set labelCount = 5")
         } else /*if (periodOnChartDays < 300)*/ {
             setLabelCount((periodOnChartDays / 30).toInt(), true)
-            println("Set labelCount to: ${(periodOnChartDays / 30).toInt()} -> $labelCount")
+            Log.d(TAG,"Set labelCount to: ${(periodOnChartDays / 30).toInt()} -> $labelCount")
         }
     }
 
@@ -118,7 +120,7 @@ fun generateChartBitmap(
         )
     }
     if (movingAverage1 != null) {
-        println("Generate MAV1, period: $movingAverage1")
+        Log.d(TAG,"Generate MAV1, period: $movingAverage1")
         val mavEntries = generateMovingAverageData(totalEnties, startIdx, movingAverage1)
         if (mavEntries.isNotEmpty()) {
             dataSets.add(
@@ -135,7 +137,7 @@ fun generateChartBitmap(
         }
     }
     if (movingAverage2 != null) {
-        println("Generate MAV2, period: $movingAverage2")
+        Log.d(TAG,"Generate MAV2, period: $movingAverage2")
         val mavEntries = generateMovingAverageData(totalEnties, startIdx, movingAverage2)
         if (mavEntries.isNotEmpty()) {
             dataSets.add(
@@ -154,13 +156,15 @@ fun generateChartBitmap(
 
     chart.data = LineData(dataSets.toList())
 
-    val padding = Resources.getSystem().displayMetrics.density * (extPadding?:0)
-    println("image padding: $padding")
-    val screenWidth = Resources.getSystem().displayMetrics.widthPixels-padding.toInt()
-    //val screenHeight = Resources.getSystem().displayMetrics.heightPixels
-    val height = 1980
-    val width = (periodOnChartDays * 3.0 * screenWidth / 365).toInt().coerceIn(screenWidth, 6*screenWidth)
-    println("chart size: ${width}x$height")
+//    val padding = Resources.getSystem().displayMetrics.density * (extPadding?:0)
+//    Log.d(TAG,"image padding: $padding")
+//    val screenWidth = Resources.getSystem().displayMetrics.widthPixels//-padding.toInt()
+//    val screenHeight = Resources.getSystem().displayMetrics.heightPixels
+//    Log.d(TAG,"screen size: ${screenWidth}x$screenHeight")
+//    Log.d(TAG,"screen size w.padding: ${Resources.getSystem().displayMetrics.widthPixels-padding.toInt()}x${Resources.getSystem().displayMetrics.heightPixels-padding.toInt()}")
+    val height = heightPx
+    val width = (periodOnChartDays * 3.0 * widthPx / 365).toInt().coerceIn(widthPx, 6*widthPx)
+    Log.d(TAG,"chart size: ${width}x$height")
     chart.measure(
         View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
         View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY)
@@ -219,7 +223,7 @@ class DateAxisFormatter(
     override fun getAxisLabel(value: Float, axis: AxisBase?): String {
         val millis = startMillis + value.toLong()
         val instant = Instant.ofEpochMilli(millis)
-        //println("getAxisLabel : $instant")
+        //Log.d(TAG,"getAxisLabel : $instant")
 
         return when {
             periodDays <= 100 -> formatterShort.format(instant)

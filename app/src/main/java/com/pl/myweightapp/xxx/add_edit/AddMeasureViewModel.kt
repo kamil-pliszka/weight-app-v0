@@ -8,14 +8,12 @@ import com.pl.myweightapp.persistence.WeightUnit
 import com.pl.myweightapp.xxx.ModelEvent
 import com.pl.myweightapp.xxx.exceptionToString
 import com.pl.myweightapp.xxx.toInstant
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.LocalDate
@@ -31,6 +29,7 @@ data class AddMeasureState(
     val choosenDate: LocalDate = LocalDate.now(),
 )
 
+private const val TAG = "AddMeasureVM"
 class AddMeasureViewModel : ViewModel() {
     private val _events = Channel<ModelEvent>(Channel.BUFFERED)
     val events = _events.receiveAsFlow()
@@ -62,7 +61,7 @@ class AddMeasureViewModel : ViewModel() {
             }
             _state.update { it.copy(showDialog = true) }
         }
-        println("ShowDialogAction")
+        Log.d(TAG,"ShowDialogAction")
     }
 
 

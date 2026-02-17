@@ -4,9 +4,7 @@ import android.app.Application
 import android.content.Context
 import android.net.Uri
 import android.util.Log
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.runtime.Immutable
-import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.pl.myweightapp.AppModule
@@ -57,7 +55,7 @@ sealed interface UiEvent {
     data class Info(val message: String) : UiEvent
 }
 
-
+private const val TAG = "SettingsVM"
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _state = MutableStateFlow(UiState())
@@ -65,10 +63,25 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val _events = Channel<UiEvent>(Channel.BUFFERED)
     val events = _events.receiveAsFlow()
 
+    private val languageManager = AppModule.provideLanguageManager()
+
     init {
-        loadInitialLanguage()
+        observeLanguage()
     }
 
+    private fun observeLanguage() {
+        viewModelScope.launch {
+            languageManager.languageFlow.collect { tag ->
+                Log.d(TAG,"Settings:.observeLanguage: $tag")
+                _state.update {
+                    it.copy(
+                        langTag = tag,
+                        langDisplayName = langDisplayName(tag)
+                    )
+                }
+            }
+        }
+    }
 
     fun onAction(action: Action) {
         when (action) {
@@ -104,7 +117,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             }
 
             is Action.OnLanguageChoose -> {
-                println("lang: ${action.lang}")
+                Log.d(TAG,"lang: ${action.lang}")
                 setLanguage(action.lang)
                 _state.update { it.copy(showLanguageChooser = false) }
             }
@@ -118,10 +131,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     }
 
     private fun processCsvImport(uri: Uri) {
-        println("CSV import uri: $uri")
+        Log.d(TAG,"CSV import uri: $uri")
         val context = (getApplication() as Context)
         val mime = context.contentResolver.getType(uri)
-        println("mime: $mime")
+        Log.d(TAG,"mime: $mime")
         viewModelScope.launch {
             _state.update { it.copy(isCsvProcessing = true) }
             try {
@@ -149,11 +162,11 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     }
 
     private fun processCsvExport(uri: Uri) {
-        println("CSV export uri: $uri")
+        Log.d(TAG,"CSV export uri: $uri")
         val context = (getApplication() as Context)
         val mime = context.contentResolver.getType(uri)
         val filename = getFileNameFromUri(context, uri)
-        println("mime: $mime, filename: $filename")
+        Log.d(TAG,"mime: $mime, filename: $filename")
         viewModelScope.launch {
             _state.update { it.copy(isCsvProcessing = true) }
             try {
@@ -200,25 +213,28 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         val context = (getApplication() as Context)
         val fileChart = File(context.filesDir, Constants.WEIGHT_CHART_FILENAME)
         if (fileChart.exists()) {
-            println("Delete ${Constants.WEIGHT_CHART_FILENAME}")
+            Log.d(TAG,"Delete ${Constants.WEIGHT_CHART_FILENAME}")
             fileChart.delete()
         }
         val fileProfile = File(context.filesDir, Constants.PROFILE_PHOTO_FILENAME)
         if (fileProfile.exists()) {
-            println("Delete ${Constants.PROFILE_PHOTO_FILENAME}")
+            Log.d(TAG,"Delete ${Constants.PROFILE_PHOTO_FILENAME}")
             fileProfile.delete()
         }
     }
 
     fun setLanguage(tag: String) {
-        println("setLanguage to: $tag")
-        AppCompatDelegate.setApplicationLocales(
-            LocaleListCompat.forLanguageTags(tag)
-        )
+        Log.d(TAG,"setLanguage to: $tag")
+//        AppCompatDelegate.setApplicationLocales(
+//            LocaleListCompat.forLanguageTags(tag)
+//        )
         viewModelScope.launch {
             try {
-                AppModule.provideUserProfileRepository().updateLang(tag)
-                loadInitialLanguage()
+                //AppModule.provideUserProfileRepository().updateLang(tag)
+                //loadInitialLanguage()
+                //viewModelScope.launch {
+                languageManager.changeLanguage(tag)
+                //}
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -234,11 +250,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         }*/
     }
 
+    /*
     private fun loadInitialLanguage() {
         viewModelScope.launch {
             try {
                 val savedLang = AppModule.provideUserProfileRepository().getLang()
-                println("loadInitialLanguage: $savedLang")
+                Log.d(TAG,"loadInitialLanguage: $savedLang")
                 val langTag = savedLang ?: Constants.DEFAULT_LANG // fallback
                 _state.update {
                     it.copy(
@@ -246,7 +263,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                         langDisplayName = langDisplayName(langTag)
                     )
                 }
-                println("state: ${_state.value}")
+                Log.d(TAG,"state: ${_state.value}")
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -255,6 +272,8 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             }
         }
     }
+    */
+
 
     private fun langDisplayName(tag: String): String {
         val context = getApplication() as Context

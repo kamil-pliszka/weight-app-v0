@@ -1,5 +1,6 @@
 package com.pl.myweightapp.xxx.add_edit
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -35,6 +36,7 @@ import com.pl.myweightapp.xxx.toDateString
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
+private const val TAG = "EditMeasureDialog"
 @Composable
 fun EditMeasureDialog(
     modifier: Modifier = Modifier,
@@ -167,7 +169,7 @@ fun EditMeasureDialog(
     val messageSuccessfulyDeleted = stringResource(R.string.successfully_deleted)
     val messageErrorPrefix = stringResource(R.string.error_msg_prefix)
     ObserveAsEvents(viewModel.events) { event ->
-        println("got output event: $event")
+        Log.d(TAG,"got output event: $event")
         scope.launch {
             val msg = when (event) {
                 UiEvent.Deleted -> messageSuccessfulyDeleted

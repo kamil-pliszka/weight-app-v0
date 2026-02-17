@@ -1,5 +1,6 @@
 package com.pl.myweightapp.xxx.home
 
+import android.util.Log
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
@@ -57,6 +58,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
@@ -68,15 +70,16 @@ import com.pl.myweightapp.core.presentation.util.ObserveAsEvents
 import com.pl.myweightapp.persistence.DisplayPeriod
 import com.pl.myweightapp.xxx.EnumDropdownButton
 
+private const val TAG = "HomeScreen"
 
 @Preview(name = "processing")
 @Composable
 fun HomeScreenPreview() {
     HomeScreenContent(
         state = UiState(isProcessing = true),
-        //onRefresh = { },
         onChangePeriod = { },
         onChangeMovingAverages = { _, _ -> },
+        onChangeChartDimensions = { _, _ -> },
     )
 }
 
@@ -90,7 +93,7 @@ fun HomeScreen(
 
     val messageErrorPrefix = stringResource(R.string.error_msg_prefix)
     ObserveAsEvents(viewModel.events) { event ->
-        println("got event: $event")
+        Log.d(TAG,"got event: $event")
         when (event) {
             is UiEvent.Error -> snackbarHostState.showSnackbar(
                 messageErrorPrefix + event.message,
@@ -104,16 +107,13 @@ fun HomeScreen(
     HomeScreenContent(
         modifier = modifier,
         state = state,
-        //onRefresh = { viewModel.onAction(Action.OnRefreshChartAction) },
         onChangePeriod = { viewModel.onAction(Action.OnChangePeriod(it)) },
         onChangeMovingAverages = { ma1, ma2 ->
-            viewModel.onAction(
-                Action.OnChangeMovingAverages(
-                    ma1,
-                    ma2
-                )
-            )
+            viewModel.onAction( Action.OnChangeMovingAverages( ma1, ma2 ))
         },
+        onChangeChartDimensions = { widthPx, heightPx ->
+            viewModel.onAction( Action.OnChangeChartDimensionsAction(widthPx, heightPx))
+        }
     )
 }
 
@@ -125,6 +125,7 @@ fun HomeScreenContent(
     //onRefresh: () -> Unit,
     onChangePeriod: (DisplayPeriod) -> Unit,
     onChangeMovingAverages: (Int?, Int?) -> Unit,
+    onChangeChartDimensions: (Int, Int) -> Unit,
 ) {
     Box(
         modifier = modifier.fillMaxSize()
@@ -157,6 +158,7 @@ fun HomeScreenContent(
                     //onClickGenerate = onRefresh,
                     onChangePeriod = onChangePeriod,
                     onChangeMovingAverages = onChangeMovingAverages,
+                    onChangeChartDimensions = onChangeChartDimensions
                 )
                 LegendBottom(
                     modifier = Modifier
@@ -269,9 +271,9 @@ fun LegendBottom(modifier: Modifier = Modifier, state: UiState) {
 fun ChartImageContent(
     modifier: Modifier = Modifier,
     state: UiState,
-    //onClickGenerate: () -> Unit,
     onChangePeriod: (DisplayPeriod) -> Unit,
     onChangeMovingAverages: (Int?, Int?) -> Unit,
+    onChangeChartDimensions: (Int, Int) -> Unit
 ) {
     // val painter = rememberAsyncImagePainter("file:///android_asset/my_chart.png") // Jeśli w assets
     //val painter =
@@ -281,18 +283,27 @@ fun ChartImageContent(
     LaunchedEffect(scrollState.maxValue) {
         scrollState.scrollTo(scrollState.maxValue)
     }
-//    val density = LocalDensity.current
-//    val px = with(density) { 4.dp.toPx() }
-//    println("ChartImageContent.padding: 4dp = ${px}px")
+    //var chartHeightPx by remember { mutableIntStateOf(0) }
+    //var chartWidthPx by remember { mutableIntStateOf(0) }
+    var chartSize by remember { mutableStateOf(IntSize(0, 0)) }
     Box(
         modifier = modifier
             .padding(4.dp)
             .clipToBounds()
+            .onSizeChanged { size ->
+                if (size != chartSize) {
+                    chartSize = size
+                    Log.d(TAG,"Chart size from box: $size")
+                    if (chartSize.width > 0 && chartSize.height > 0) {
+                        onChangeChartDimensions(chartSize.width, chartSize.height)
+                    }
+                }
+            }
     ) {
         Box(
             modifier = Modifier
                 .matchParentSize()
-                //.onSizeChanged { sz -> println("new size:box:$sz") }
+                //.onSizeChanged { sz -> Log.d(TAG,"new size:box:$sz") }
                 //.border(width = Dp.Hairline, color = Color.Magenta)
                 //.clipToBounds()
                 .horizontalScroll(scrollState),
@@ -304,8 +315,8 @@ fun ChartImageContent(
                     painter = BitmapPainter(state.chartBitmap),
                     contentDescription = stringResource(R.string.home_weight_graph),
                     modifier = Modifier
-                        .fillMaxHeight()
-                        .onSizeChanged { sz -> println("new size:img:$sz") },
+                        .fillMaxHeight(),
+                        //.onSizeChanged { sz -> Log.d(TAG,"new size:img:$sz") }
                     contentScale = ContentScale.FillHeight
                 )
             } else {

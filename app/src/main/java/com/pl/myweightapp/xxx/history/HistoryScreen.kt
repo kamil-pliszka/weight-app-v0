@@ -1,5 +1,6 @@
 package com.pl.myweightapp.xxx.history
 
+import android.util.Log
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,6 +30,7 @@ import com.pl.myweightapp.xxx.ConfirmationDialog
 import com.pl.myweightapp.xxx.add_edit.EditMeasureDialog
 import kotlinx.coroutines.launch
 
+private const val TAG = "HistoryScreen"
 @Composable
 fun HistoryScreen(
     modifier: Modifier = Modifier,
@@ -75,7 +77,7 @@ fun HistoryScreen(
                                 detectHorizontalDragGestures { _, dragAmount ->
                                     if (dragAmount > 40f) { // przesunięcie w prawo
                                         scope.launch {
-                                            println("Invoke onDelete for ${itemUi.id} ..., dragAmount = $dragAmount")
+                                            Log.d(TAG,"Invoke onDelete for ${itemUi.id} ..., dragAmount = $dragAmount")
                                             viewModel.onAction(
                                                 HistoryAction.OnItemDeleteAction(
                                                     itemUi
@@ -98,7 +100,7 @@ fun HistoryScreen(
 
     val scope = rememberCoroutineScope()
     state.editingItemId?.let { itemId ->
-        //println("composable state.editingItemId is set")
+        //Log.d(TAG,"composable state.editingItemId is set")
 //        val editVm: EditMeasureViewModel = viewModel(key = "edit-$itemId") {
 //            EditMeasureViewModel(itemId)
 //        }
@@ -135,7 +137,7 @@ fun HistoryScreen(
     val messageSuccessfulyDeleted = stringResource(R.string.successfully_deleted)
     val messageErrorPrefix = stringResource(R.string.error_msg_prefix)
     ObserveAsEvents(viewModel.events) { event ->
-        println("got output event: $event")
+        Log.d(TAG,"got output event: $event")
         scope.launch {
             val msg = when (event) {
                 UiEvent.Deleted -> messageSuccessfulyDeleted

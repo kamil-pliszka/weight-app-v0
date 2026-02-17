@@ -35,6 +35,7 @@ class UserProfileRepository(
         dao.upsert(updated)
     }
 
+    /*
     suspend fun updateLang(lang: String?) = withContext(Dispatchers.IO) {
         val current = dao.getProfile()
 
@@ -46,5 +47,5 @@ class UserProfileRepository(
     suspend fun getLang(): String? = withContext(Dispatchers.IO) {
         dao.getLang()
     }
-
+    */
 }

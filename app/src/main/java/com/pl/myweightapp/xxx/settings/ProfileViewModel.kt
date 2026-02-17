@@ -83,6 +83,7 @@ sealed interface ProfileEvent {
     data class Saved(val message: String) : ProfileEvent
 }
 
+private const val TAG = "ProfileVM"
 class ProfileViewModel(application: Application) : AndroidViewModel(application) {
     private val _state = MutableStateFlow(ProfileUiState())
     val state = _state.asStateFlow()
@@ -115,7 +116,7 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
                     File(it).exists()
                 }.also {
                     if (it == null && profile.photoPath != null) {
-                        println("Photo file not found: ${profile.photoPath}")
+                        Log.d(TAG,"Photo file not found: ${profile.photoPath}")
                     }
                 }
                 if (_state.value.photoPath != null && validPath == null) {
@@ -159,7 +160,7 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun onAction(action: ProfileAction) {
-        println("Action -> $action")
+        Log.d(TAG,"Action -> $action")
         when (action) {
             is ProfileAction.NameChanged -> {
                 update { copy(name = action.value) }
@@ -244,13 +245,13 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
     private fun onWeightUnitChange(newWeightUnit: WeightUnit) {
         if (state.value.weightUnit == newWeightUnit) return
         val weight = state.value.targetWeight.toBigDecimalOrNull() ?: return
-        println("onWeightUnitChange: $newWeightUnit, weight: $weight")
+        Log.d(TAG,"onWeightUnitChange: $newWeightUnit, weight: $weight")
         val newWeightValue = when(newWeightUnit) {
             WeightUnit.KG -> weight.toFloat().lbsToKg()
             WeightUnit.LB -> weight.toFloat().kgToLbs()
         }
         val newWeightStr = "%.1f".format(newWeightValue).replace(".0", "")
-        println("newWeightStr: $newWeightStr")
+        Log.d(TAG,"newWeightStr: $newWeightStr")
         update { copy(targetWeight = newWeightStr) }
     }
 
@@ -278,7 +279,7 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
             s.photoPath
         }
         //_state.update { it.copy(photoPath = finalPhoto, tmpPhotoPath = null) }
-        println("Final photo: $finalPhoto")
+        Log.d(TAG,"Final photo: $finalPhoto")
         val entity = UserProfileEntity(
             id = 0,
             name = s.name,
@@ -364,8 +365,8 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
         val finalFile = File(context.filesDir, to)
         val tmpFile = File(from)
         tmpFile.copyTo(finalFile, overwrite = true)
-        println("Copied tmp file to: ${finalFile.absolutePath}, file size = ${finalFile.length()}")
-        println("Delete tmp file: ${tmpFile.absolutePath}")
+        Log.d(TAG,"Copied tmp file to: ${finalFile.absolutePath}, file size = ${finalFile.length()}")
+        Log.d(TAG,"Delete tmp file: ${tmpFile.absolutePath}")
         return finalFile.absolutePath
     }
 }

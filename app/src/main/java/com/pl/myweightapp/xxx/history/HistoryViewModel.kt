@@ -1,5 +1,6 @@
 package com.pl.myweightapp.xxx.history
 
+import android.util.Log
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -47,6 +48,7 @@ data class HistoryUiState(
     val deletingItem: WieghtMeasureUi? = null,
 )
 
+private const val TAG = "HistoryVM"
 @OptIn(ExperimentalCoroutinesApi::class)
 class HistoryViewModel : ViewModel() {
     private val _events = Channel<UiEvent>(Channel.BUFFERED)
@@ -66,12 +68,12 @@ class HistoryViewModel : ViewModel() {
                 emit(Unit)
             }
             .flatMapLatest {
-                println("Refresh trigger started")
+                Log.d(TAG,"Refresh trigger started")
                 repository.observeWeightMeasureHistory()
             }
             .map { convertToHistoryUi(it) }
             .onEach { uiList ->
-                println("Got results from DB, size: ${uiList.size}")
+                Log.d(TAG,"Got results from DB, size: ${uiList.size}")
                 _state.update {
                     it.copy(
                         isLoading = false,
@@ -164,7 +166,7 @@ class HistoryViewModel : ViewModel() {
             }
 
             HistoryAction.OnRefreshAction -> {
-                println("OnRefreshAction")
+                Log.d(TAG,"OnRefreshAction")
                 _state.update { it.copy(isRefreshing = true) }
                 viewModelScope.launch {
                     refreshTrigger.emit(Unit)

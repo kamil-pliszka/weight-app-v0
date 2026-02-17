@@ -1,5 +1,6 @@
 package com.pl.myweightapp.xxx.add_edit
 
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -83,7 +84,7 @@ fun AddMeasureDialog(
 
     if (state.showDateDialog) {
         val maxDate = remember {
-            println("Compute maxDate in remember")
+            Log.d("AddMeasureDialog","Compute maxDate in remember")
             LocalDate.now().toMillis()
         }
         val datePickerState = rememberDatePickerState(

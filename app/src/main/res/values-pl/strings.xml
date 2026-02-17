@@ -76,4 +76,7 @@
     <string name="edit_measure_delete_button">Usuń</string>
     <string name="date_picker_ok">Wybierz</string>
     <string name="date_picker_cancel">Anulaj</string>
+    <string name="navigation_home">Start</string>
+    <string name="navigation_history">Historia</string>
+    <string name="navigation_settings">Ustawienia</string>
 </resources>

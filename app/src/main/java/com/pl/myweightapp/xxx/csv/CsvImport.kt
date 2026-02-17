@@ -2,6 +2,7 @@ package com.pl.myweightapp.xxx.csv
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import com.pl.myweightapp.AppModule
 import com.pl.myweightapp.persistence.WeightMeasureEntity
 import com.pl.myweightapp.persistence.WeightUnit
@@ -16,29 +17,30 @@ private fun WeightUnitCsv.toEntityWeightUnit(): WeightUnit {
     }
 }
 
+private const val TAG = "CsvImport"
 suspend fun importWeightCsv(
     context: Context,
     uri: Uri,
     onProgressChange: (Float) -> Unit
 ): Int = withContext(Dispatchers.IO) {
     val entriesCsv = parseWeightCsv(context, uri)
-    println("entriesCsv : ${entriesCsv.size}")
+    Log.d(TAG,"entriesCsv : ${entriesCsv.size}")
     val repo = AppModule.provideWeightMeasureRepository()
     val historyEntities = repo.findWeightMeasureHistory()
-    println("history entities : ${historyEntities.size}")
+    Log.d(TAG,"history entities : ${historyEntities.size}")
     val existingEntitiesByDate = historyEntities
         .groupBy { it.date.toLocalDate() }
         .mapValues { (_, list) ->
             list.sortedBy { it.id } // rosnąco po id
         }
-    println("groupped by date size : ${existingEntitiesByDate.size}")
+    Log.d(TAG,"groupped by date size : ${existingEntitiesByDate.size}")
     val toInsert = mutableListOf<WeightMeasureEntity>()
     val toUpdate = mutableListOf<WeightMeasureEntity>()
 
     entriesCsv.forEachIndexed { idx, csvEntry ->
         val existingOnDate = existingEntitiesByDate[csvEntry.timestamp.toLocalDate()]
         if (existingOnDate == null) {
-            println("Insert measure on date: ${csvEntry.timestamp}, weight: ${csvEntry.value}, idx = $idx")
+            Log.d(TAG,"Insert measure on date: ${csvEntry.timestamp}, weight: ${csvEntry.value}, idx = $idx")
             toInsert.add(
                 WeightMeasureEntity(
                     date = csvEntry.timestamp,
@@ -47,8 +49,8 @@ suspend fun importWeightCsv(
                 )
             )
         } else {
-            println("Update measure on date: ${csvEntry.timestamp.toLocalDate()}, weight: ${csvEntry.value}, idx = $idx")
-            if (existingOnDate.size > 1) println("Matching entities: ${existingOnDate.size} !!!")
+            Log.d(TAG,"Update measure on date: ${csvEntry.timestamp.toLocalDate()}, weight: ${csvEntry.value}, idx = $idx")
+            if (existingOnDate.size > 1) Log.d(TAG,"Matching entities: ${existingOnDate.size} !!!")
             val entityOnDate = findEntityOnDate(csvEntry, existingOnDate)
             val updatedWeightEntity = entityOnDate.copy(
                 weight = csvEntry.value,
@@ -60,7 +62,7 @@ suspend fun importWeightCsv(
         //_state.update { it.copy(csvProgress = (idx + 1).toFloat() / entriesCsv.size) }
     }
     repo.import(AppModule.provideMyDatabase(), toInsert, toUpdate)
-    println("Imported")
+    Log.d(TAG,"Imported")
     entriesCsv.size //return
 }
 

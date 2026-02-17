@@ -1,5 +1,6 @@
 package com.pl.myweightapp.xxx.settings
 
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.animateFloatAsState
@@ -43,6 +44,7 @@ import com.pl.myweightapp.R
 import com.pl.myweightapp.core.presentation.util.ObserveAsEvents
 import com.pl.myweightapp.xxx.ConfirmationDialog
 
+private const val TAG = "SettingsScreen"
 @Composable
 fun SettingsScreen(
     modifier: Modifier = Modifier,
@@ -54,7 +56,7 @@ fun SettingsScreen(
     val launcherChooseFileImport = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
     ) { uri ->
-        println("onResult, uri: $uri")
+        Log.d(TAG,"onResult, uri: $uri")
         if (uri != null) {
             viewModel.onAction(Action.OnCsvImport(uri))
         }
@@ -63,7 +65,7 @@ fun SettingsScreen(
     val launcherChooseFileExport = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("text/csv")
     ) { uri ->
-        println("onResult, uri: $uri")
+        Log.d(TAG,"onResult, uri: $uri")
         if (uri != null) {
             viewModel.onAction(Action.OnCsvExport(uri))
         }
@@ -71,7 +73,7 @@ fun SettingsScreen(
 
     val messageErrorPrefix = stringResource(R.string.error_msg_prefix)
     ObserveAsEvents(viewModel.events) { event ->
-        println("got event: $event")
+        Log.d(TAG,"got event: $event")
         when (event) {
             is UiEvent.Error -> snackbarHostState.showSnackbar(
                 messageErrorPrefix + event.message,

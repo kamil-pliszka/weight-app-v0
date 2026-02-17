@@ -2,10 +2,6 @@ package com.pl.myweightapp.navigation
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.offset
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
@@ -19,7 +15,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -63,34 +59,6 @@ fun Navigation(modifier: Modifier = Modifier, navController: NavHostController, 
         }
     }
 }
-
-data class BottomNavItem(
-    val name: String,
-    val route: String,
-    val icon: ImageVector,
-    val badgeCount: Int = 0
-)
-
-
-val BOTTOM_NAV = listOf(
-    BottomNavItem(
-        name = "Home",
-        route = Screen.HomeScreen.route,
-        icon = Icons.Default.Home,
-    ),
-    BottomNavItem(
-        name = "History",
-        route = Screen.HistoryScreen.route,
-        //icon = Icons.Default.Notifications,
-        icon = Icons.AutoMirrored.Filled.List,
-    ),
-    BottomNavItem(
-        name = "Settings",
-        route = Screen.SettingsScreen.route,
-        icon = Icons.Default.Settings,
-    )
-)
-
 
 @Composable
 fun BottomNavigationBar(
@@ -148,12 +116,12 @@ fun BottomNavigationBar(
                         ) {
                             Icon(
                                 imageVector = item.icon,
-                                contentDescription = item.name
+                                contentDescription = stringResource(id = item.nameResId)
                             )
                         }
                         //if (selected) {
                             Text(
-                                text = item.name,
+                                text = stringResource(id = item.nameResId),
                                 textAlign = TextAlign.Center,
                                 fontSize = 10.sp
                             )

@@ -76,4 +76,7 @@
     <string name="edit_measure_delete_button">Delete</string>
     <string name="date_picker_ok">OK</string>
     <string name="date_picker_cancel">Cancel</string>
+    <string name="navigation_home">Home</string>
+    <string name="navigation_history">History</string>
+    <string name="navigation_settings">Settings</string>
 </resources>

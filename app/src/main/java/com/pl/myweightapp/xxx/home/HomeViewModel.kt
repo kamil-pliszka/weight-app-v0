@@ -59,10 +59,12 @@ data class UiState(
     val periodWeightChange: Float? = null,
     val toDestinationWeight: Float? = null,
     val periodStartEntity: WeightMeasureEntity? = null,
+    val chartWidthPx: Int = 0,
+    val chartHeightPx: Int = 0,
 )
 
 sealed interface Action {
-    object OnRefreshChartAction : Action
+    data class OnChangeChartDimensionsAction(val widthPx: Int, val heightPx: Int) : Action
     data class OnChangePeriod(val period: DisplayPeriod) : Action
     data class OnChangeMovingAverages(val ma1: Int?, val ma2: Int?) : Action
 }
@@ -72,6 +74,8 @@ sealed interface UiEvent {
     data class Error(val message: String) : UiEvent
     data class Info(val message: String) : UiEvent
 }
+
+private const val TAG = "ChartVM"
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -86,7 +90,17 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     fun onAction(action: Action) {
         when (action) {
-            is Action.OnRefreshChartAction -> generateChart()
+            is Action.OnChangeChartDimensionsAction -> {
+                Log.d(TAG, "change dimensions: ${action.widthPx}x${action.heightPx}")
+                _state.update {
+                    it.copy(
+                        chartWidthPx = action.widthPx,
+                        chartHeightPx = action.heightPx
+                    )
+                }
+                generateChart()
+            }
+
             is Action.OnChangePeriod -> changePeriod(action.period)
             is Action.OnChangeMovingAverages -> changeMovingAverages(action.ma1, action.ma2)
         }
@@ -100,7 +114,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         // Połącz dwa Flow w jeden
         weightRepo.observeWeightMeasureHistory()
             .combine(profileRepo.profile) { history, profile ->
-                println("From combine: ${history.size}, profile: $profile")
+                Log.d(TAG, "From combine: ${history.size}, profile: $profile")
+                Log.d(TAG, "dim: ${state.value.chartWidthPx}x${state.value.chartHeightPx}")
                 // przetwarzanie do UI modelu
                 Pair(sortWeightMeasureHistory(history), profile)
             }
@@ -142,12 +157,12 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                         DisplayPeriod.P3Y -> minusYears(3)
                     }
                 }.plusDays(1)
-                println("PeriodDate before: $startPeriodDate")
+                Log.d(TAG, "PeriodDate before: $startPeriodDate")
                 val startPeriodInstant = startPeriodDate.toInstant()
                 state.value.weightHistory.firstOrNull { it.date.isBefore(startPeriodInstant) }
             }
         }
-        println("Period start entity: $periodStartEntity")
+        Log.d(TAG, "Period start entity: $periodStartEntity")
 
 //        val startWeight =
 //            startEntity?.weight?.convertWeightValueTo(startEntity.unit, measurementUnit)
@@ -173,13 +188,13 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 periodStartEntity = periodStartEntity,
             )
         }
-        println("Updated state")
+        Log.d(TAG, "Updated state")
     }
 
     private fun generateChart() {
-        println("Refreshing chart")
-        println("Proifle: ${state.value.profile}")
-        println("Measurements: ${state.value.weightHistory.size}")
+        Log.d(TAG, "Generate chart ${state.value.chartWidthPx}x${state.value.chartHeightPx}")
+        Log.d(TAG, "Proifle: ${state.value.profile}")
+        Log.d(TAG, "Measurements: ${state.value.weightHistory.size}")
         viewModelScope.launch {
             _state.update { it.copy(isProcessing = true) }
             try {
@@ -191,16 +206,21 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     history,
                     state.value.unit,
                 )
-                if (measurements.isNotEmpty()) {
+                if (measurements.isNotEmpty() && state.value.chartWidthPx > 0 && state.value.chartHeightPx > 0) {
                     val bitmap = generateChartBitmap(
                         context = getApplication(),
                         totalMeasurements = measurements,
                         startIdx = startIdx,
+                        widthPx = state.value.chartWidthPx,
+                        heightPx = state.value.chartHeightPx,
                         destinationValue = state.value.destinationWeight,
                         movingAverage1 = state.value.profile?.movingAverage1,
                         movingAverage2 = state.value.profile?.movingAverage2,
                     )
-                    println("Finished chart generation, got bitmap: ${bitmap.width}x${bitmap.height}")
+                    Log.d(
+                        TAG,
+                        "Finished chart generation, got bitmap: ${bitmap.width}x${bitmap.height}"
+                    )
 
                     _state.update {
                         it.copy(chartBitmap = bitmap.asImageBitmap())
@@ -231,13 +251,13 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     // w ViewModel
     fun exportChart(bitmap: Bitmap) {
         viewModelScope.launch {
-            println("Exporting chart")
+            Log.d(TAG, "Exporting chart")
             val file = saveBitmapToFileAsync(
                 getApplication(),
                 bitmap,
                 Constants.WEIGHT_CHART_FILENAME
             )
-            println("Zapisano wykres do: ${file.absolutePath}")
+            Log.d(TAG, "Zapisano wykres do: ${file.absolutePath}")
         }
     }
 
@@ -257,17 +277,17 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private fun tryToLoadFromFile() {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                println("tryToLoadFromFile")
+                Log.d(TAG, "tryToLoadFromFile")
                 val context = getApplication() as Context
                 val file = File(context.filesDir, Constants.WEIGHT_CHART_FILENAME)
                 val bitmap = loadBitmapFromFile(file)
                 if (bitmap != null) {
-                    println("loaded chart from file")
+                    Log.d(TAG, "loaded chart from file")
                     _state.update {
                         it.copy(chartBitmap = bitmap.asImageBitmap())
                     }
                 }
-                println("tryToLoadFromFile-end")
+                Log.d(TAG, "tryToLoadFromFile-end")
             }
         }
     }
