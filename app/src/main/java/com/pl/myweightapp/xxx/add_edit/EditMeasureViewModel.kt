@@ -39,10 +39,13 @@ sealed interface UiEvent {
     data class Error(val message: String) : UiEvent
 }
 
-private const val TAG = "EditMeasureVM"
 class EditMeasureViewModel(
     val itemId: Long,
 ) : ViewModel() {
+    companion object {
+        private const val TAG = "EditMeasureVM"
+    }
+
     //output events
     private val _events = Channel<UiEvent>(Channel.BUFFERED)
     val events = _events.receiveAsFlow()

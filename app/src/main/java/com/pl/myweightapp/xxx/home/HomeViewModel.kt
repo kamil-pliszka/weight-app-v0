@@ -81,9 +81,11 @@ sealed interface UiEvent {
     data class Info(val message: String) : UiEvent
 }
 
-private const val TAG = "ChartVM"
-
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
+    companion object {
+        private const val TAG = "ChartVM"
+    }
+
 
     private val _state = MutableStateFlow(UiState())
     val state = _state.asStateFlow()

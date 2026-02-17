@@ -55,9 +55,10 @@ sealed interface UiEvent {
     data class Info(val message: String) : UiEvent
 }
 
-private const val TAG = "SettingsVM"
-
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
+    companion object {
+        private const val TAG = "SettingsVM"
+    }
 
     private val _state = MutableStateFlow(UiState())
     val state = _state.asStateFlow()

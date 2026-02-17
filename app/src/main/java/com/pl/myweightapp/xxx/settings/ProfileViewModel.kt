@@ -83,8 +83,11 @@ sealed interface ProfileEvent {
     data class Saved(val message: String) : ProfileEvent
 }
 
-private const val TAG = "ProfileVM"
 class ProfileViewModel(application: Application) : AndroidViewModel(application) {
+    companion object {
+        private const val TAG = "ProfileVM"
+    }
+
     private val _state = MutableStateFlow(ProfileUiState())
     val state = _state.asStateFlow()
     private val _events = Channel<ProfileEvent>(Channel.BUFFERED)

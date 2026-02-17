@@ -29,8 +29,10 @@ data class AddMeasureState(
     val choosenDate: LocalDate = LocalDate.now(),
 )
 
-private const val TAG = "AddMeasureVM"
 class AddMeasureViewModel : ViewModel() {
+    companion object {
+        private const val TAG = "AddMeasureVM"
+    }
     private val _events = Channel<ModelEvent>(Channel.BUFFERED)
     val events = _events.receiveAsFlow()
     private val _state = MutableStateFlow(AddMeasureState())

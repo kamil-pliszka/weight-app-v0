@@ -48,9 +48,12 @@ data class HistoryUiState(
     val deletingItem: WieghtMeasureUi? = null,
 )
 
-private const val TAG = "HistoryVM"
 @OptIn(ExperimentalCoroutinesApi::class)
 class HistoryViewModel : ViewModel() {
+    companion object {
+        private const val TAG = "HistoryVM"
+    }
+
     private val _events = Channel<UiEvent>(Channel.BUFFERED)
     val events = _events.receiveAsFlow()
 

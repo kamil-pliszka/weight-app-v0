@@ -1,7 +1,6 @@
 package com.pl.myweightapp.xxx.chart
 
 import android.content.Context
-import android.content.res.Resources
 import android.graphics.Bitmap
 import android.util.Log
 import android.view.View
@@ -162,8 +161,13 @@ fun generateChartBitmap(
 //    val screenHeight = Resources.getSystem().displayMetrics.heightPixels
 //    Log.d(TAG,"screen size: ${screenWidth}x$screenHeight")
 //    Log.d(TAG,"screen size w.padding: ${Resources.getSystem().displayMetrics.widthPixels-padding.toInt()}x${Resources.getSystem().displayMetrics.heightPixels-padding.toInt()}")
+    val isLandscape = widthPx > heightPx
     val height = heightPx
-    val width = (periodOnChartDays * 3.0 * widthPx / 365).toInt().coerceIn(widthPx, 6*widthPx)
+    val width = if (isLandscape) {
+        (periodOnChartDays * 3.0 * widthPx / 365).toInt().coerceIn(widthPx, 4 * widthPx)
+    } else {
+        (periodOnChartDays * 3.0 * widthPx / 365).toInt().coerceIn(widthPx, 6 * widthPx)
+    }
     Log.d(TAG,"chart size: ${width}x$height")
     chart.measure(
         View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
