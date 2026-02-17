@@ -19,10 +19,10 @@ data class UserProfileEntity(
     val gender: Gender? = null,
     val photoPath: String? = null, // ścieżka do pliku
     val name: String? = null,
-    val displayPeriod: DisplayPeriod? = null,
-    val movingAverage1: Int? = null,
-    val movingAverage2: Int? = null,
-    val lang: String? = null,
+//    val displayPeriod: DisplayPeriod? = null,
+//    val movingAverage1: Int? = null,
+//    val movingAverage2: Int? = null,
+//    val lang: String? = null,
 ) {
     companion object {
         const val TABLE = "user_profile"
@@ -38,8 +38,4 @@ enum class Gender {
 enum class HeightUnit {
     CM,
     IN
-}
-
-enum class DisplayPeriod {
-    P2W, P1M, P2M, P3M, P6M, P1Y, P2Y, P3Y, ALL
 }

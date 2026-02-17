@@ -11,8 +11,8 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.pl.myweightapp.AppModule
+import com.pl.myweightapp.R
 import com.pl.myweightapp.core.Constants
-import com.pl.myweightapp.persistence.DisplayPeriod
 import com.pl.myweightapp.persistence.UserProfileEntity
 import com.pl.myweightapp.persistence.WeightMeasureEntity
 import com.pl.myweightapp.persistence.WeightUnit
@@ -42,6 +42,10 @@ import java.io.FileOutputStream
 import java.math.BigDecimal
 import kotlin.coroutines.cancellation.CancellationException
 
+enum class DisplayPeriod {
+    P2W, P1M, P2M, P3M, P6M, P1Y, P2Y, P3Y, ALL
+}
+
 @Immutable
 data class UiState(
     val isLoading: Boolean = false,
@@ -53,6 +57,8 @@ data class UiState(
     val profile: UserProfileEntity? = null,
     val unit: WeightUnit = WeightUnit.KG,
     val period: DisplayPeriod = DisplayPeriod.P2M,
+    val movingAverage1: Int? = null,
+    val movingAverage2: Int? = null,
     val startWeight: Float? = null,
     val currentWeight: Float? = null,
     val destinationWeight: Float? = null,
@@ -87,6 +93,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val weightRepo = AppModule.provideWeightMeasureRepository()
     private val profileRepo = AppModule.provideUserProfileRepository()
 
+    private val appSettingsManager = AppModule.provideAppSettingsManager()
+
 
     fun onAction(action: Action) {
         when (action) {
@@ -111,21 +119,27 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     init {
-        // Połącz dwa Flow w jeden
-        weightRepo.observeWeightMeasureHistory()
-            .combine(profileRepo.profile) { history, profile ->
-                Log.d(TAG, "From combine: ${history.size}, profile: $profile")
-                Log.d(TAG, "dim: ${state.value.chartWidthPx}x${state.value.chartHeightPx}")
-                // przetwarzanie do UI modelu
-                Pair(sortWeightMeasureHistory(history), profile)
-            }
-            .onStart { _state.update { it.copy(isLoading = true) } }
-            .onEach { (history, profile) ->
+        // Połącz Flow w jeden
+        combine(
+            weightRepo.observeWeightMeasureHistory(),
+            profileRepo.profile,
+            appSettingsManager.settingsFlow
+        ) { history, profile, settings ->
+            Log.d(TAG, "From combine: ${history.size}, settings: $settings, profile: $profile")
+            Log.d(TAG, "dim: ${state.value.chartWidthPx}x${state.value.chartHeightPx}")
+            // przetwarzanie do UI modelu
+            Triple(sortWeightMeasureHistory(history), profile, settings)
+        }.onStart { _state.update { it.copy(isLoading = true) } }
+            .onEach { (history, profile, settings) ->
                 _state.update {
                     it.copy(
                         isLoading = false,
                         weightHistory = history,
                         profile = profile,
+                        period = runCatching { DisplayPeriod.valueOf(settings.displayPeriodStr) }.getOrNull()
+                            ?: DisplayPeriod.P2M,
+                        movingAverage1 = settings.ma1,
+                        movingAverage2 = settings.ma2,
                     )
                 }
                 prepareDependentStateValues()
@@ -136,7 +150,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun prepareDependentStateValues() {
         val measurementUnit: WeightUnit = state.value.profile?.weightUnit ?: WeightUnit.KG
-        val period: DisplayPeriod = state.value.profile?.displayPeriod ?: DisplayPeriod.P2M
+        val period: DisplayPeriod = state.value.period
         val startEntity = state.value.weightHistory.lastOrNull()
         val currentEntity = state.value.weightHistory.firstOrNull()
         val destEntity = state.value.profile?.targetWeight
@@ -214,8 +228,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                         widthPx = state.value.chartWidthPx,
                         heightPx = state.value.chartHeightPx,
                         destinationValue = state.value.destinationWeight,
-                        movingAverage1 = state.value.profile?.movingAverage1,
-                        movingAverage2 = state.value.profile?.movingAverage2,
+                        movingAverage1 = state.value.movingAverage1,
+                        movingAverage2 = state.value.movingAverage2,
                     )
                     Log.d(
                         TAG,
@@ -236,7 +250,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 throw e
             } catch (e: Exception) {
                 Log.e("refreshChart", e.message, e)
-                sendEvent(UiEvent.Error("Generowanie nie powiodło się: ${e.message}"))
+                sendEvent(UiEvent.Error(
+                    (getApplication() as Context).getString(
+                        R.string.home_cannot_generate_chart,
+                        e.message
+                    )))
             }
             _state.update { it.copy(isProcessing = false) }
         }
@@ -300,12 +318,12 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private fun changePeriod(period: DisplayPeriod) {
         viewModelScope.launch {
             try {
-                profileRepo.updatePeriod(period)
+                appSettingsManager.changePeriod(period.name)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 Log.e("updatePeriod", e.message, e)
-                sendEvent(UiEvent.Error("Zapis nie powiodł się: ${e.message}"))
+                sendEvent(UiEvent.Error((getApplication() as Context).getString(R.string.home_cannot_save_data, e.message)))
             }
         }
     }
@@ -313,7 +331,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private fun changeMovingAverages(ma1: Int?, ma2: Int?) {
         viewModelScope.launch {
             try {
-                profileRepo.updateMovingAverages(
+                appSettingsManager.changeMovingAverages(
                     if (ma1 == null || ma1 <= 1) null else ma1,
                     if (ma2 == null || ma2 <= 1) null else ma2
                 )
@@ -321,7 +339,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 throw e
             } catch (e: Exception) {
                 Log.e("changeMovingAverages", e.message, e)
-                sendEvent(UiEvent.Error("Zapis nie powiodł się: ${e.message}"))
+                sendEvent(UiEvent.Error((getApplication() as Context).getString(R.string.home_cannot_save_data, e.message)))
             }
         }
     }

@@ -9,7 +9,7 @@ import androidx.room.TypeConverters
 // zwiększyć wersję bazy danych)
 // @Database - adnotacja oznaczająca klasę jako bazę danych, powoduje wygenerowanie kodu implementującego bazę danych
 // na podstawie klasy abstrakcyjnej WeatherDatabase oraz metod w niej zawartych
-@Database(entities = [WeightMeasureEntity::class, UserProfileEntity::class], version = 7, exportSchema = false)
+@Database(entities = [WeightMeasureEntity::class, UserProfileEntity::class], version = 8, exportSchema = false)
 @TypeConverters(DbTypeConverters::class)
 abstract class MyDatabase: RoomDatabase() {
     abstract fun weightMeasureDao(): WeightMeasureDao

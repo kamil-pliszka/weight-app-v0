@@ -45,6 +45,7 @@ import com.pl.myweightapp.core.presentation.util.ObserveAsEvents
 import com.pl.myweightapp.xxx.ConfirmationDialog
 
 private const val TAG = "SettingsScreen"
+
 @Composable
 fun SettingsScreen(
     modifier: Modifier = Modifier,
@@ -56,7 +57,7 @@ fun SettingsScreen(
     val launcherChooseFileImport = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
     ) { uri ->
-        Log.d(TAG,"onResult, uri: $uri")
+        Log.d(TAG, "onResult, uri: $uri")
         if (uri != null) {
             viewModel.onAction(Action.OnCsvImport(uri))
         }
@@ -65,7 +66,7 @@ fun SettingsScreen(
     val launcherChooseFileExport = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("text/csv")
     ) { uri ->
-        Log.d(TAG,"onResult, uri: $uri")
+        Log.d(TAG, "onResult, uri: $uri")
         if (uri != null) {
             viewModel.onAction(Action.OnCsvExport(uri))
         }
@@ -73,7 +74,7 @@ fun SettingsScreen(
 
     val messageErrorPrefix = stringResource(R.string.error_msg_prefix)
     ObserveAsEvents(viewModel.events) { event ->
-        Log.d(TAG,"got event: $event")
+        Log.d(TAG, "got event: $event")
         when (event) {
             is UiEvent.Error -> snackbarHostState.showSnackbar(
                 messageErrorPrefix + event.message,
@@ -119,7 +120,7 @@ fun SettingsScreen(
             }) {
                 Text(stringResource(R.string.settings_language))
                 Spacer(Modifier.width(24.dp))
-                Text(state.langDisplayName)
+                Text(state.langDisplayResId?.let { stringResource(it) } ?: "–")
             }
 
             ListItem(
@@ -148,7 +149,10 @@ fun SettingsScreen(
             DataRow(Modifier.clickable {
                 viewModel.onAction(Action.OnDeleteAllDataClick)
             }) {
-                Text(stringResource(R.string.settings_delete_all_data), color = MaterialTheme.colorScheme.error)
+                Text(
+                    stringResource(R.string.settings_delete_all_data),
+                    color = MaterialTheme.colorScheme.error
+                )
             }
 
         }
@@ -159,7 +163,10 @@ fun SettingsScreen(
                 .fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            Text(stringResource(R.string.settings_processing_csv_please_be_patient), modifier = Modifier.offset(y = 64.dp))
+            Text(
+                stringResource(R.string.settings_processing_csv_please_be_patient),
+                modifier = Modifier.offset(y = 64.dp)
+            )
             val animatedProgress by animateFloatAsState(targetValue = state.csvProgress)
             LinearProgressIndicator(
                 progress = { animatedProgress },

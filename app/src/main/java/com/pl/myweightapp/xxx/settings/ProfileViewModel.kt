@@ -11,8 +11,8 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.pl.myweightapp.AppModule
+import com.pl.myweightapp.R
 import com.pl.myweightapp.core.Constants.PROFILE_PHOTO_FILENAME
-import com.pl.myweightapp.persistence.DisplayPeriod
 import com.pl.myweightapp.persistence.Gender
 import com.pl.myweightapp.persistence.HeightUnit
 import com.pl.myweightapp.persistence.UserProfileEntity
@@ -52,10 +52,10 @@ data class ProfileUiState(
     val targetWeight: String = "",
     val heightUnit: HeightUnit = HeightUnit.CM,
     val weightUnit: WeightUnit = WeightUnit.KG,
-    val period : DisplayPeriod? = null,
-    val movingAverage1: Int? = null,
-    val movingAverage2: Int? = null,
-    val lang: String? = null,
+//    val period : DisplayPeriod? = null,
+//    val movingAverage1: Int? = null,
+//    val movingAverage2: Int? = null,
+//    val lang: String? = null,
     )
 
 sealed interface ProfileAction {
@@ -131,10 +131,10 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
 
                         heightUnit = profile.heightUnit ?: HeightUnit.CM,
                         weightUnit = profile.weightUnit ?: WeightUnit.KG,
-                        period = profile.displayPeriod,
-                        movingAverage1 = profile.movingAverage1,
-                        movingAverage2 = profile.movingAverage2,
-                        lang = profile.lang,
+                        //period = profile.displayPeriod,
+                        //movingAverage1 = profile.movingAverage1,
+                        //movingAverage2 = profile.movingAverage2,
+                        //lang = profile.lang,
 
                         gender = profile.gender ?: Gender.UNSPECIFIED,
                         photoPath = validPath, //profile.photoPath,
@@ -290,10 +290,10 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
             weightUnit = s.weightUnit,
             gender = s.gender,
             photoPath = finalPhoto,
-            displayPeriod = s.period,
-            movingAverage1 = s.movingAverage1,
-            movingAverage2 = s.movingAverage2,
-            lang = s.lang
+            //displayPeriod = s.period,
+            //movingAverage1 = s.movingAverage1,
+            //movingAverage2 = s.movingAverage2,
+            //lang = s.lang
         )
 
         viewModelScope.launch {
@@ -303,7 +303,7 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
                 _state.update {
                     it.copy(isSaving = false, isDirty = false)
                 }
-                sendEvent(ProfileEvent.Saved("Zapisano profil"))
+                sendEvent(ProfileEvent.Saved((getApplication() as Context).getString(R.string.profile_saved)))
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

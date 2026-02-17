@@ -35,7 +35,7 @@ data class UiState(
     val showDeleteConfirm: Boolean = false,
     val showLanguageChooser: Boolean = false,
     val langTag: String = "",
-    val langDisplayName: String = "",
+    val langDisplayResId: Int? = null,
 )
 
 sealed interface Action {
@@ -56,6 +56,7 @@ sealed interface UiEvent {
 }
 
 private const val TAG = "SettingsVM"
+
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _state = MutableStateFlow(UiState())
@@ -63,7 +64,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val _events = Channel<UiEvent>(Channel.BUFFERED)
     val events = _events.receiveAsFlow()
 
-    private val languageManager = AppModule.provideLanguageManager()
+    private val languageManager = AppModule.provideAppSettingsManager()
 
     init {
         observeLanguage()
@@ -72,11 +73,11 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private fun observeLanguage() {
         viewModelScope.launch {
             languageManager.languageFlow.collect { tag ->
-                Log.d(TAG,"Settings:.observeLanguage: $tag")
+                Log.d(TAG,"observeLanguage: $tag")
                 _state.update {
                     it.copy(
                         langTag = tag,
-                        langDisplayName = langDisplayName(tag)
+                        langDisplayResId = langDisplayResId(tag)
                     )
                 }
             }
@@ -117,7 +118,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             }
 
             is Action.OnLanguageChoose -> {
-                Log.d(TAG,"lang: ${action.lang}")
+                Log.d(TAG, "lang: ${action.lang}")
                 setLanguage(action.lang)
                 _state.update { it.copy(showLanguageChooser = false) }
             }
@@ -131,24 +132,36 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     }
 
     private fun processCsvImport(uri: Uri) {
-        Log.d(TAG,"CSV import uri: $uri")
+        Log.d(TAG, "CSV import uri: $uri")
         val context = (getApplication() as Context)
         val mime = context.contentResolver.getType(uri)
-        Log.d(TAG,"mime: $mime")
+        Log.d(TAG, "mime: $mime")
         viewModelScope.launch {
             _state.update { it.copy(isCsvProcessing = true) }
             try {
                 val entriesCount = importWeightCsv(context, uri) { progress ->
                     _state.update { it.copy(csvProgress = progress) }
                 }
-                sendEvent(UiEvent.Info("Zaimportowano $entriesCount wpisów"))
+                sendEvent(UiEvent.Info(
+                    context.getString(
+                        R.string.settings_csv_import_success,
+                        entriesCount
+                    )))
             } catch (e: CancellationException) {
                 throw e
             } catch (e: CsvParseException) {
-                sendEvent(UiEvent.Error(e.message ?: "Błąd importu CSV"))
+                sendEvent(UiEvent.Error(
+                    context.getString(
+                        R.string.settings_csv_import_parsing_error,
+                        e.message
+                    )))
             } catch (e: Exception) {
                 Log.e("CsvImport", e.message, e)
-                sendEvent(UiEvent.Error("Import nie powiódł się: ${e.message}"))
+                sendEvent(UiEvent.Error(
+                    context.getString(
+                        R.string.settings_csv_import_error,
+                        e.message
+                    )))
             } finally {
                 _state.update { it.copy(isCsvProcessing = false) }
             }
@@ -162,25 +175,32 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     }
 
     private fun processCsvExport(uri: Uri) {
-        Log.d(TAG,"CSV export uri: $uri")
+        Log.d(TAG, "CSV export uri: $uri")
         val context = (getApplication() as Context)
         val mime = context.contentResolver.getType(uri)
         val filename = getFileNameFromUri(context, uri)
-        Log.d(TAG,"mime: $mime, filename: $filename")
+        Log.d(TAG, "mime: $mime, filename: $filename")
         viewModelScope.launch {
             _state.update { it.copy(isCsvProcessing = true) }
             try {
                 val entriesCount = exportWeightCsv(context, uri) { progress ->
                     _state.update { it.copy(csvProgress = progress) }
                 }
-                sendEvent(UiEvent.Info("Wyeksportowano $entriesCount wpisów do pliku: $filename"))
+                sendEvent(UiEvent.Info(
+                    context.getString(
+                        R.string.settings_csv_export_success,
+                        entriesCount,
+                        filename
+                    )))
             } catch (e: CancellationException) {
                 throw e
-            } catch (e: CsvParseException) {
-                sendEvent(UiEvent.Error(e.message ?: "Błąd eksportu CSV"))
             } catch (e: Exception) {
                 Log.e("CsvExport", e.message, e)
-                sendEvent(UiEvent.Error("Export nie powiódł się: ${e.message}"))
+                sendEvent(UiEvent.Error(
+                    context.getString(
+                        R.string.settings_csv_export_error,
+                        e.message
+                    )))
             } finally {
                 _state.update { it.copy(isCsvProcessing = false) }
             }
@@ -195,13 +215,19 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 AppModule.provideWeightMeasureRepository().deleteAll()
                 //usunięcie profilu
                 AppModule.provideUserProfileRepository().deleteAll()
+                //usunięcie ustawień
+                AppModule.provideAppSettingsManager().deleteAll()
                 deleteAppFiles()
-                sendEvent(UiEvent.Info("Wszystkie dane zostały usunięte"))
+                sendEvent(UiEvent.Info((getApplication() as Context).getString(R.string.settings_delete_all_success)))
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 Log.e("DeleteAll", e.message, e)
-                sendEvent(UiEvent.Error("Nie udało się usunąć danych: ${e.message}"))
+                sendEvent(UiEvent.Error(
+                    (getApplication() as Context).getString(
+                        R.string.settings_delete_all_error,
+                        e.message
+                    )))
             } finally {
                 _state.update { it.copy(isLoading = false) }
             }
@@ -213,18 +239,18 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         val context = (getApplication() as Context)
         val fileChart = File(context.filesDir, Constants.WEIGHT_CHART_FILENAME)
         if (fileChart.exists()) {
-            Log.d(TAG,"Delete ${Constants.WEIGHT_CHART_FILENAME}")
+            Log.d(TAG, "Delete ${Constants.WEIGHT_CHART_FILENAME}")
             fileChart.delete()
         }
         val fileProfile = File(context.filesDir, Constants.PROFILE_PHOTO_FILENAME)
         if (fileProfile.exists()) {
-            Log.d(TAG,"Delete ${Constants.PROFILE_PHOTO_FILENAME}")
+            Log.d(TAG, "Delete ${Constants.PROFILE_PHOTO_FILENAME}")
             fileProfile.delete()
         }
     }
 
     fun setLanguage(tag: String) {
-        Log.d(TAG,"setLanguage to: $tag")
+        Log.d(TAG, "setLanguage to: $tag")
 //        AppCompatDelegate.setApplicationLocales(
 //            LocaleListCompat.forLanguageTags(tag)
 //        )
@@ -239,7 +265,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 throw e
             } catch (e: Exception) {
                 Log.e("setLanguage", e.message, e)
-                sendEvent(UiEvent.Error("Zapis nie powiodł się: ${e.message}"))
+                sendEvent(UiEvent.Error((getApplication() as Context).getString(R.string.settings_lang_error, e.message)))
             }
         }
         /*
@@ -250,37 +276,11 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         }*/
     }
 
-    /*
-    private fun loadInitialLanguage() {
-        viewModelScope.launch {
-            try {
-                val savedLang = AppModule.provideUserProfileRepository().getLang()
-                Log.d(TAG,"loadInitialLanguage: $savedLang")
-                val langTag = savedLang ?: Constants.DEFAULT_LANG // fallback
-                _state.update {
-                    it.copy(
-                        langTag = langTag,
-                        langDisplayName = langDisplayName(langTag)
-                    )
-                }
-                Log.d(TAG,"state: ${_state.value}")
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Log.e("InitLang", e.message, e)
-                sendEvent(UiEvent.Error("Pobranie języka nie powiodło się: ${e.message}"))
-            }
-        }
-    }
-    */
-
-
-    private fun langDisplayName(tag: String): String {
-        val context = getApplication() as Context
+    private fun langDisplayResId(tag: String): Int? {
         return when (tag) {
-            "pl" -> context.getString(R.string.lang_pl)
-            "en" -> context.getString(R.string.lang_en)
-            else -> tag
+            "pl" -> R.string.lang_pl
+            "en" -> R.string.lang_en
+            else -> null
         }
     }
 }

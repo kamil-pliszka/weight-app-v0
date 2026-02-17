@@ -1,6 +1,5 @@
 package com.pl.myweightapp.repositories
 
-import com.pl.myweightapp.persistence.DisplayPeriod
 import com.pl.myweightapp.persistence.UserProfileDao
 import com.pl.myweightapp.persistence.UserProfileEntity
 import kotlinx.coroutines.Dispatchers
@@ -19,6 +18,7 @@ class UserProfileRepository(
         dao.deleteAll()
     }
 
+    /*
     suspend fun updatePeriod(period: DisplayPeriod) = withContext(Dispatchers.IO) {
         val current = dao.getProfile()
 
@@ -34,6 +34,7 @@ class UserProfileRepository(
             ?: UserProfileEntity(id = 0, movingAverage1 = ma1, movingAverage2 = ma2)
         dao.upsert(updated)
     }
+    */
 
     /*
     suspend fun updateLang(lang: String?) = withContext(Dispatchers.IO) {

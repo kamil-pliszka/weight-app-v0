@@ -79,4 +79,15 @@
     <string name="navigation_home">Home</string>
     <string name="navigation_history">History</string>
     <string name="navigation_settings">Settings</string>
+    <string name="home_cannot_save_data">Cannot save data: %1$s</string>
+    <string name="home_cannot_generate_chart">Chart generating error: %1$s</string>
+    <string name="profile_saved">Profile saved</string>
+    <string name="settings_csv_export_success">Exported %1$d items to file: %2$s</string>
+    <string name="settings_csv_export_error">Error during export: %1$s</string>
+    <string name="settings_csv_import_success">Successfully imported %1$d items</string>
+    <string name="settings_csv_import_parsing_error">Error parsing CSV: %1$s</string>
+    <string name="settings_csv_import_error">Error during import: %1$s</string>
+    <string name="settings_delete_all_success">Successfully deleted all data</string>
+    <string name="settings_delete_all_error">Error during deleting data: %1$s</string>
+    <string name="settings_lang_error">Error during changing lang: %1$s</string>
 </resources>

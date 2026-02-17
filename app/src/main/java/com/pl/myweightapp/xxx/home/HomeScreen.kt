@@ -67,7 +67,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.pl.myweightapp.R
 import com.pl.myweightapp.core.presentation.util.ObserveAsEvents
-import com.pl.myweightapp.persistence.DisplayPeriod
 import com.pl.myweightapp.xxx.EnumDropdownButton
 
 private const val TAG = "HomeScreen"
@@ -369,7 +368,7 @@ fun MovingAveragesComponent(
         onClick = { showMaPopup = !showMaPopup },
         modifier = modifier
     ) {
-        Text("MA: ${state.profile?.movingAverage1 ?: "–"} / ${state.profile?.movingAverage2 ?: "–"}")
+        Text("MA: ${state.movingAverage1 ?: "–"} / ${state.movingAverage2 ?: "–"}")
         Spacer(Modifier.width(8.dp))
         Icon(
             imageVector = Icons.Default.ArrowDropDown,
@@ -378,8 +377,8 @@ fun MovingAveragesComponent(
         )
     }
     if (showMaPopup) {
-        var draftMa1 by remember { mutableIntStateOf(state.profile?.movingAverage1 ?: 1) }
-        var draftMa2 by remember { mutableIntStateOf(state.profile?.movingAverage2 ?: 1) }
+        var draftMa1 by remember { mutableIntStateOf(state.movingAverage1 ?: 1) }
+        var draftMa2 by remember { mutableIntStateOf(state.movingAverage2 ?: 1) }
 
         Popup(
             alignment = Alignment.BottomStart,

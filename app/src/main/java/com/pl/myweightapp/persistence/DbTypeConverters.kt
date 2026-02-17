@@ -51,12 +51,12 @@ class DbTypeConverters {
     fun toGender(value: String?): Gender? =
         value?.let { Gender.valueOf(it) }
 
-    @TypeConverter
-    fun fromDisplayPeriod(period: DisplayPeriod?): String? =
-        period?.name
-
-    @TypeConverter
-    fun toDisplayPeriod(value: String?): DisplayPeriod? =
-        value?.let { DisplayPeriod.valueOf(it) }
+//    @TypeConverter
+//    fun fromDisplayPeriod(period: DisplayPeriod?): String? =
+//        period?.name
+//
+//    @TypeConverter
+//    fun toDisplayPeriod(value: String?): DisplayPeriod? =
+//        value?.let { DisplayPeriod.valueOf(it) }
 
 }

@@ -1,5 +1,7 @@
 package com.pl.myweightapp.core
 
+import java.util.Locale
+
 object Constants {
     /**
      * Określa czy ma używać wbudowanej kontrolki do prezentowania wykresów - true
@@ -10,6 +12,5 @@ object Constants {
     //const val BASE_URL = "https://api.coinpaprika.com/"
     const val PROFILE_PHOTO_FILENAME = "profile_photo.jpg"
     const val WEIGHT_CHART_FILENAME = "weight_chart.png"
-
-    const val DEFAULT_LANG = "pl"
+    const val DEFAULT_DISPLAY_PERIOD = "P3M"
 }

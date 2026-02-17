@@ -79,4 +79,15 @@
     <string name="navigation_home">Start</string>
     <string name="navigation_history">Historia</string>
     <string name="navigation_settings">Ustawienia</string>
+    <string name="home_cannot_save_data">Zapis nie powiodł się: %1$s</string>
+    <string name="home_cannot_generate_chart">Generowanie wykresu nie powiodło się: %1$s</string>
+    <string name="profile_saved">Zapisano profil</string>
+    <string name="settings_csv_export_success">Wyeksportowano %1$d wpisów do pliku: %2$s</string>
+    <string name="settings_csv_export_error">Eksport nie powiódł się: %1$s</string>
+    <string name="settings_csv_import_success">Pomyślnie zaimportowano %1$d wpisów</string>
+    <string name="settings_csv_import_parsing_error">Błąd importu CSV: %1$s</string>
+    <string name="settings_csv_import_error">Import nie powiódł się: %1$s</string>
+    <string name="settings_delete_all_success">Wszystkie dane zostały usunięte</string>
+    <string name="settings_delete_all_error">Nie udało się usunąć danych: %1$s</string>
+    <string name="settings_lang_error">Zapis nie powiodł się: %1$s</string>
 </resources>
