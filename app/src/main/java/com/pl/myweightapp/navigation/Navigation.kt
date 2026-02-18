@@ -2,15 +2,12 @@ package com.pl.myweightapp.navigation
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -83,16 +80,16 @@ fun AppBottomNavigationBar(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val items: List<BottomNavItem> = state
 
-    val onItemClick = { route: String ->
+    val onItemClick = { navItem: BottomNavItem ->
         //navController.navigate(it.route)
-        navController.navigate(route) {
+        navController.navigate(navItem.route) {
             popUpTo(navController.graph.startDestinationId) {
                 saveState = true
             }
             launchSingleTop = true
             restoreState = true
         }
-        viewModel.decreaseBadge(route)
+        viewModel.decreaseBadge(navItem.badgeType)
     }
 
     val backStackEntry = navController.currentBackStackEntryAsState()
@@ -106,7 +103,7 @@ fun AppBottomNavigationBar(
             val selected = item.route == backStackEntry.value?.destination?.route
             NavigationBarItem(
                 selected = selected,
-                onClick = { onItemClick(item.route) },
+                onClick = { onItemClick(item) },
                 colors = NavigationBarItemDefaults.colors(
                     selectedIconColor = Color.Green,
                     selectedTextColor = Color.Green,
@@ -160,16 +157,16 @@ fun AppNavigationRail(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val items: List<BottomNavItem> = state
 
-    val onItemClick = { route: String ->
+    val onItemClick = { navItem: BottomNavItem ->
         //navController.navigate(it.route)
-        navController.navigate(route) {
+        navController.navigate(navItem.route) {
             popUpTo(navController.graph.startDestinationId) {
                 saveState = true
             }
             launchSingleTop = true
             restoreState = true
         }
-        viewModel.decreaseBadge(route)
+        viewModel.decreaseBadge(navItem.badgeType)
     }
 
     val backStackEntry = navController.currentBackStackEntryAsState()
@@ -188,7 +185,7 @@ fun AppNavigationRail(
     modifier: Modifier = Modifier,
     items: List<BottomNavItem>,
     currentRoute: String?,
-    onItemClick: (String) -> Unit,
+    onItemClick: (BottomNavItem) -> Unit,
 ) {
     NavigationRail(
         modifier = modifier.fillMaxHeight(),
@@ -211,7 +208,7 @@ fun AppNavigationRail(
 
                 NavigationRailItem(
                     selected = selected,
-                    onClick = { onItemClick(item.route) },
+                    onClick = { onItemClick(item) },
                     colors = NavigationRailItemDefaults.colors(
                         selectedIconColor = Color.Green,
                         selectedTextColor = Color.Green,

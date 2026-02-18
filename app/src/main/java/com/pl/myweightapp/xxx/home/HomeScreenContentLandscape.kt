@@ -1,36 +1,23 @@
 package com.pl.myweightapp.xxx.home
 
 import android.util.Log
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -44,12 +31,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -89,7 +74,7 @@ fun HomeScreenContentLandscape(
                 modifier = Modifier
                     .fillMaxSize()
             ) {
-                ChartImageContentVertical(
+                ChartImageContentLandscape(
                     modifier = Modifier.weight(1f),
                     state = state,
                     //onClickGenerate = onRefresh,
@@ -107,42 +92,14 @@ fun HomeScreenContentLandscape(
         }
 
         if (state.isProcessing) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(bottom = 0.dp),
-                horizontalAlignment = CenterHorizontally,
-                verticalArrangement = Arrangement.Bottom,
-            ) {
-                val transition = rememberInfiniteTransition()
-                val progress by transition.animateFloat(
-                    initialValue = 0f,
-                    targetValue = 1f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(durationMillis = 6000),
-                    )
-                )
-                Text(
-                    stringResource(R.string.home_processing_please_be_patient),
-                    fontSize = 14.sp,
-                    modifier = Modifier.offset(y = 24.dp)
-                )
-                //val animatedProgress by animateFloatAsState(targetValue = state.progress)
-                LinearProgressIndicator(
-                    //progress = { state.progress },
-                    progress = { progress },
-                    modifier = Modifier
-                        .fillMaxWidth()
-//                        .height(4.dp)
-                )
-            }
+            HomeScreenProgressBar()
         }
     }
 }
 
 
 @Composable
-fun ChartImageContentVertical(
+fun ChartImageContentLandscape(
     modifier: Modifier = Modifier,
     state: UiState,
     //onChangePeriod: (DisplayPeriod) -> Unit,
@@ -243,9 +200,10 @@ fun LegendVertical(
                 onSelected = { onChangePeriod(it) },
             )
 
-            MovingAveragesComponentLandscape(
-                modifier = Modifier.align(Alignment.Start),
-                state = state,
+            MovingAveragesComponent(
+                //modifier = Modifier.align(Alignment.Start),
+                movingAverage1 = state.movingAverage1,
+                movingAverage2 = state.movingAverage2,
                 onChangeMovingAverages = onChangeMovingAverages
             )
 
@@ -279,51 +237,3 @@ fun LegendVertical(
     }
 }
 
-@Composable
-fun MovingAveragesComponentLandscape(
-    modifier: Modifier = Modifier,
-    state: UiState,
-    onChangeMovingAverages: (Int?, Int?) -> Unit,
-) {
-
-    var showMaPopup by remember { mutableStateOf(false) }
-    val rotation by animateFloatAsState(targetValue = if (showMaPopup) 180f else 0f)
-    val density = LocalDensity.current
-    val offsetY = with(density) { (-0).dp.roundToPx() }
-    Box() {
-        Button(
-            onClick = { showMaPopup = !showMaPopup },
-            modifier = modifier, //.height(24.dp),
-            contentPadding = PaddingValues(
-                start = 8.dp,
-                //horizontal = 4.dp,
-                //vertical = 0.dp
-            )
-        ) {
-            Text(
-                "MA: ${state.movingAverage1 ?: "–"} / ${state.movingAverage2 ?: "–"}",
-                //style = MaterialTheme.typography.labelSmall
-            )
-            Spacer(Modifier.width(0.dp))
-            Icon(
-                imageVector = Icons.Default.ArrowDropDown,
-                contentDescription = null,
-                modifier = Modifier.rotate(rotation)
-            )
-        }
-
-        if (showMaPopup) {
-            MovingAveragesPopUp(
-                state.movingAverage1,
-                state.movingAverage2,
-                Alignment.BottomStart,
-                offsetY,
-                onDismissRequest = { showMaPopup = false },
-                onApply = { draftMa1, draftMa2 ->
-                    onChangeMovingAverages(draftMa1, draftMa2)
-                    showMaPopup = false
-                }
-            )
-        }
-    }
-}

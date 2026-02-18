@@ -1,10 +1,6 @@
 package com.pl.myweightapp.xxx.home
 
 import android.util.Log
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -14,13 +10,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -41,7 +35,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.pl.myweightapp.R
 import com.pl.myweightapp.xxx.EnumDropdownButton
 
@@ -78,7 +71,7 @@ fun HomeScreenContentPortrait(
                         .wrapContentHeight(),
                     state = state
                 )
-                ChartImageContent(
+                ChartImageContentPortrait(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f),   // 👈 zajmuje całą pozostałą przestrzeń
@@ -98,35 +91,7 @@ fun HomeScreenContentPortrait(
         }
 
         if (state.isProcessing) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(bottom = 80.dp),
-                horizontalAlignment = CenterHorizontally,
-                verticalArrangement = Arrangement.Bottom,
-            ) {
-                val transition = rememberInfiniteTransition()
-                val progress by transition.animateFloat(
-                    initialValue = 0f,
-                    targetValue = 1f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(durationMillis = 6000),
-                    )
-                )
-                Text(
-                    stringResource(R.string.home_processing_please_be_patient),
-                    fontSize = 14.sp,
-                    modifier = Modifier.offset(y = 24.dp)
-                )
-                //val animatedProgress by animateFloatAsState(targetValue = state.progress)
-                LinearProgressIndicator(
-                    //progress = { state.progress },
-                    progress = { progress },
-                    modifier = Modifier
-                        .fillMaxWidth()
-//                        .height(4.dp)
-                )
-            }
+            HomeScreenProgressBar()
         }
     }
 }
@@ -196,7 +161,7 @@ fun LegendBottom(modifier: Modifier = Modifier, state: UiState) {
 }
 
 @Composable
-fun ChartImageContent(
+fun ChartImageContentPortrait(
     modifier: Modifier = Modifier,
     state: UiState,
     onChangePeriod: (DisplayPeriod) -> Unit,
@@ -257,10 +222,11 @@ fun ChartImageContent(
                 )
             }
         }
-
+        //TODO - przenieść do osobnego elementu, wynieść
         MovingAveragesComponent(
             modifier = Modifier.align(Alignment.BottomStart),
-            state = state,
+            movingAverage1 = state.movingAverage1,
+            movingAverage2 = state.movingAverage2,
             onChangeMovingAverages = onChangeMovingAverages
         )
 

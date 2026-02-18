@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.pl.myweightapp.persistence.MyDatabase
 import com.pl.myweightapp.repositories.AppSettingsRepository
+import com.pl.myweightapp.repositories.NavigationBadgeRepository
 import com.pl.myweightapp.repositories.UserProfileRepository
 import com.pl.myweightapp.repositories.WeightMeasureRepository
 import kotlinx.coroutines.runBlocking
@@ -17,6 +18,8 @@ object AppModule {
     private lateinit var userProfileRepository: UserProfileRepository
     private lateinit var appSettingsManager: AppSettingsManager
 
+    private lateinit var navBadgeRepository: NavigationBadgeRepository
+
     // Inicjalizacja kontenera Contextem - aby mieć dostęp do plików (w tym pliku bazy danych Room)
     fun initialize(context: Context) {
         appContext = context
@@ -27,6 +30,7 @@ object AppModule {
 
         weightMeasureRepository = WeightMeasureRepository(database.weightMeasureDao())
         userProfileRepository = UserProfileRepository(database.userProfileDao())
+        navBadgeRepository = NavigationBadgeRepository()
 
         val repo = AppSettingsRepository(context)
         appSettingsManager = AppSettingsManager(repo)
@@ -43,4 +47,6 @@ object AppModule {
     fun provideWeightMeasureRepository() = weightMeasureRepository
     fun provideUserProfileRepository() = userProfileRepository
     fun provideAppSettingsManager() = appSettingsManager
+
+    fun provideNavBadgeRepository() = navBadgeRepository
 }
