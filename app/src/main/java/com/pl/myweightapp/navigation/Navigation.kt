@@ -33,9 +33,9 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.pl.myweightapp.xxx.history.HistoryScreen
-import com.pl.myweightapp.xxx.home.HomeScreen
-import com.pl.myweightapp.xxx.settings.SettingsScreen
+import com.pl.myweightapp.feature.history.HistoryScreen
+import com.pl.myweightapp.feature.home.HomeScreen
+import com.pl.myweightapp.feature.settings.SettingsScreen
 
 sealed class Screen(val route: String) {
     object HomeScreen : Screen("home")
