@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
@@ -244,7 +246,10 @@ fun ProfileContent(
             Spacer(Modifier.height(8.dp))
 
             Row {
-                Button(onClick = { pickImageLauncher.launch("image/*") }) {
+                Button(
+                    onClick = { pickImageLauncher.launch("image/*") },
+                    contentPadding = PaddingValues(start = 4.dp)
+                ) {
                     //Text("Wybierz z galerii")
                     Icon(
                         painter = painterResource(R.drawable.ic_gallery_thumbnail),
@@ -253,7 +258,11 @@ fun ProfileContent(
                         //tint = MaterialTheme.colorScheme.primary,
                     )
                 }
-                Button(onClick = { takePhotoLauncher.launch(uri) }) {
+                Spacer(Modifier.width(4.dp))
+                Button(
+                    onClick = { takePhotoLauncher.launch(uri) },
+                    contentPadding = PaddingValues(start = 4.dp)
+                ) {
                     //Text("Zrób zdjęcie")
                     Icon(
                         painter = painterResource(R.drawable.ic_outline_add_a_photo), // tu możesz wrzucić inną ikonę aparatu

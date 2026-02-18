@@ -208,6 +208,10 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun generateChart() {
+        if (state.value.useEmbeddedChart) {
+            Log.d(TAG,"useEmbeddedChart: skip generateChart")
+            return
+        }
         Log.d(TAG, "Generate chart ${state.value.chartWidthPx}x${state.value.chartHeightPx}")
         Log.d(TAG, "Proifle: ${state.value.profile}")
         Log.d(TAG, "Measurements: ${state.value.weightHistory.size}")
@@ -347,7 +351,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 }
 
-private fun prepareWeightMeasurements(
+fun prepareWeightMeasurements(
     history: List<WeightMeasureEntity>,
     measurementUnit: WeightUnit
 ): List<Measurement> {

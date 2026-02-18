@@ -102,8 +102,6 @@ fun HomeScreenContentLandscape(
 fun ChartImageContentLandscape(
     modifier: Modifier = Modifier,
     state: UiState,
-    //onChangePeriod: (DisplayPeriod) -> Unit,
-    //onChangeMovingAverages: (Int?, Int?) -> Unit,
     onChangeChartDimensions: (Int, Int) -> Unit
 ) {
     val scrollState = rememberScrollState()
@@ -120,41 +118,45 @@ fun ChartImageContentLandscape(
             .onSizeChanged { size ->
                 if (size != chartSize) {
                     chartSize = size
-                    Log.d(TAG, "Chart size from box: $size")
+                    Log.d(TAG, "Chart size from box(land): $size")
                     if (chartSize.width > 0 && chartSize.height > 0) {
                         onChangeChartDimensions(chartSize.width, chartSize.height)
                     }
                 }
             }
     ) {
-
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                //.onSizeChanged { sz -> Log.d(TAG,"new size:box:$sz") }
-                //.border(width = Dp.Hairline, color = Color.Magenta)
-                //.clipToBounds()
-                .horizontalScroll(scrollState),
-            contentAlignment = Alignment.CenterStart
-        ) {
-            //TODO - uwzględnić state.useEmbeddedChart
-            if (state.chartBitmap != null) {
-                Image(
-                    painter = BitmapPainter(state.chartBitmap),
-                    contentDescription = stringResource(R.string.home_weight_graph),
-                    modifier = Modifier
-                        .fillMaxHeight(),
-                    //.onSizeChanged { sz -> Log.d(TAG,"new size:img:$sz") }
-                    contentScale = ContentScale.FillHeight
-                )
-            } else {
-                Image(
-                    painter = painterResource(id = R.drawable.ic_chart_trend_down),
-                    contentDescription = stringResource(R.string.home_weight_graph),
-                    modifier = Modifier
-                        .size(200.dp)
-                        .align(Alignment.Center),
-                )
+        if (state.useEmbeddedChart) {
+            EmbededChartComponent(
+                state = state,
+            )
+        } else {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    //.onSizeChanged { sz -> Log.d(TAG,"new size:box:$sz") }
+                    //.border(width = Dp.Hairline, color = Color.Magenta)
+                    //.clipToBounds()
+                    .horizontalScroll(scrollState),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                if (state.chartBitmap != null) {
+                    Image(
+                        painter = BitmapPainter(state.chartBitmap),
+                        contentDescription = stringResource(R.string.home_weight_graph),
+                        modifier = Modifier
+                            .fillMaxHeight(),
+                        //.onSizeChanged { sz -> Log.d(TAG,"new size:img:$sz") }
+                        contentScale = ContentScale.FillHeight
+                    )
+                } else {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_chart_trend_down),
+                        contentDescription = stringResource(R.string.home_weight_graph),
+                        modifier = Modifier
+                            .size(200.dp)
+                            .align(Alignment.Center),
+                    )
+                }
             }
         }
     }

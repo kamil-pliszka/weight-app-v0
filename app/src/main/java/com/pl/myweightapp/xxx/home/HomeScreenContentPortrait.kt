@@ -39,6 +39,7 @@ import com.pl.myweightapp.R
 import com.pl.myweightapp.xxx.EnumDropdownButton
 
 private const val TAG = "HomeScreenPortrait"
+
 @Composable
 fun HomeScreenContentPortrait(
     modifier: Modifier = Modifier,
@@ -71,16 +72,24 @@ fun HomeScreenContentPortrait(
                         .wrapContentHeight(),
                     state = state
                 )
-                ChartImageContentPortrait(
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
+                        .fillMaxSize()
                         .weight(1f),   // 👈 zajmuje całą pozostałą przestrzeń
-                    state = state,
-                    //onClickGenerate = onRefresh,
-                    onChangePeriod = onChangePeriod,
-                    onChangeMovingAverages = onChangeMovingAverages,
-                    onChangeChartDimensions = onChangeChartDimensions
-                )
+                ) {
+                    ChartImageContentPortrait(
+                        //modifier = Modifier,
+                        //.weight(1f),   // 👈 zajmuje całą pozostałą przestrzeń
+                        state = state,
+                        //onClickGenerate = onRefresh,
+                        onChangeChartDimensions = onChangeChartDimensions
+                    )
+                    BottomButtons(
+                        state = state,
+                        onChangePeriod = onChangePeriod,
+                        onChangeMovingAverages = onChangeMovingAverages,
+                    )
+                }
                 LegendBottom(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -164,8 +173,6 @@ fun LegendBottom(modifier: Modifier = Modifier, state: UiState) {
 fun ChartImageContentPortrait(
     modifier: Modifier = Modifier,
     state: UiState,
-    onChangePeriod: (DisplayPeriod) -> Unit,
-    onChangeMovingAverages: (Int?, Int?) -> Unit,
     onChangeChartDimensions: (Int, Int) -> Unit
 ) {
     // val painter = rememberAsyncImagePainter("file:///android_asset/my_chart.png") // Jeśli w assets
@@ -181,62 +188,80 @@ fun ChartImageContentPortrait(
     var chartSize by remember { mutableStateOf(IntSize(0, 0)) }
     Box(
         modifier = modifier
+            .fillMaxSize()
             .padding(4.dp)
             .clipToBounds()
             .onSizeChanged { size ->
                 if (size != chartSize) {
                     chartSize = size
-                    Log.d(TAG,"Chart size from box: $size")
+                    Log.d(TAG, "Chart size from box(port): $size")
                     if (chartSize.width > 0 && chartSize.height > 0) {
                         onChangeChartDimensions(chartSize.width, chartSize.height)
                     }
                 }
             }
     ) {
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                //.onSizeChanged { sz -> Log.d(TAG,"new size:box:$sz") }
-                //.border(width = Dp.Hairline, color = Color.Magenta)
-                //.clipToBounds()
-                .horizontalScroll(scrollState),
-            contentAlignment = Alignment.CenterStart
-        ) {
-            //TODO - uwzględnić state.useEmbeddedChart
-            if (state.chartBitmap != null) {
-                Image(
-                    painter = BitmapPainter(state.chartBitmap),
-                    contentDescription = stringResource(R.string.home_weight_graph),
-                    modifier = Modifier
-                        .fillMaxHeight(),
-                    //.onSizeChanged { sz -> Log.d(TAG,"new size:img:$sz") }
-                    contentScale = ContentScale.FillHeight
-                )
-            } else {
-                Image(
-                    painter = painterResource(id = R.drawable.ic_chart_trend_down),
-                    contentDescription = stringResource(R.string.home_weight_graph),
-                    modifier = Modifier
-                        .size(200.dp)
-                        .align(Alignment.Center),
-                )
+        if (state.useEmbeddedChart) {
+            EmbededChartComponent(
+                state = state,
+            )
+        } else {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    //.onSizeChanged { sz -> Log.d(TAG,"new size:box:$sz") }
+                    //.border(width = Dp.Hairline, color = Color.Magenta)
+                    //.clipToBounds()
+                    .horizontalScroll(scrollState),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                if (state.chartBitmap != null) {
+                    Image(
+                        painter = BitmapPainter(state.chartBitmap),
+                        contentDescription = stringResource(R.string.home_weight_graph),
+                        modifier = Modifier
+                            .fillMaxHeight(),
+                        //.onSizeChanged { sz -> Log.d(TAG,"new size:img:$sz") }
+                        contentScale = ContentScale.FillHeight
+                    )
+                } else {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_chart_trend_down),
+                        contentDescription = stringResource(R.string.home_weight_graph),
+                        modifier = Modifier
+                            .size(200.dp)
+                            .align(Alignment.Center),
+                    )
+                }
             }
         }
-        //TODO - przenieść do osobnego elementu, wynieść
+    }
+}
+
+@Composable
+fun BottomButtons(
+    modifier: Modifier = Modifier,
+    state: UiState,
+    onChangePeriod: (DisplayPeriod) -> Unit,
+    onChangeMovingAverages: (Int?, Int?) -> Unit,
+) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(4.dp)
+    ) {
         MovingAveragesComponent(
             modifier = Modifier.align(Alignment.BottomStart),
             movingAverage1 = state.movingAverage1,
             movingAverage2 = state.movingAverage2,
             onChangeMovingAverages = onChangeMovingAverages
         )
-
 //        Button(
 //            onClick = onClickGenerate,
 //            modifier = Modifier.align(Alignment.BottomCenter)
 //        ) {
 //            Text("Generuj")
 //        }
-
         EnumDropdownButton(
             modifier = Modifier.align(Alignment.BottomEnd),
             selected = state.period,

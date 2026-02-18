@@ -44,13 +44,75 @@ fun generateChartBitmap(
         setLayerType(View.LAYER_TYPE_SOFTWARE, null)
     }
 
+    chart.legend.apply {
+        isEnabled = true
+        verticalAlignment = LegendVerticalAlignment.TOP
+        horizontalAlignment = LegendHorizontalAlignment.RIGHT
+        //yOffset = 4f
+    }
+    chart.axisRight.isEnabled = true
+    chart.description.isEnabled = false
+
+    configureChart(
+        context,
+        chart,
+        totalMeasurements,
+        startIdx,
+        destinationValue,
+        movingAverage1,
+        movingAverage2
+    )
+
+//    val padding = Resources.getSystem().displayMetrics.density * (extPadding?:0)
+//    Log.d(TAG,"image padding: $padding")
+//    val screenWidth = Resources.getSystem().displayMetrics.widthPixels//-padding.toInt()
+//    val screenHeight = Resources.getSystem().displayMetrics.heightPixels
+//    Log.d(TAG,"screen size: ${screenWidth}x$screenHeight")
+//    Log.d(TAG,"screen size w.padding: ${Resources.getSystem().displayMetrics.widthPixels-padding.toInt()}x${Resources.getSystem().displayMetrics.heightPixels-padding.toInt()}")
+    val measurementsOnChart = totalMeasurements.subList(startIdx, totalMeasurements.size)
+    val periodOnChartDays = (measurementsOnChart.last().timestamp.toEpochMilli() -
+            measurementsOnChart.first().timestamp.toEpochMilli()) / (1000 * 60 * 60 * 24)
+    Log.d(TAG,"periodOnChartDays : $periodOnChartDays")
+    val isLandscape = widthPx > heightPx
+    val height = heightPx
+    val width = if (isLandscape) {
+        (periodOnChartDays * 3.0 * widthPx / 365).toInt().coerceIn(widthPx, 4 * widthPx)
+    } else {
+        (periodOnChartDays * 3.0 * widthPx / 365).toInt().coerceIn(widthPx, 6 * widthPx)
+    }
+    Log.d(TAG,"chart size: ${width}x$height")
+    chart.measure(
+        View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
+        View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY)
+    )
+
+    chart.layout(0, 0, width, height)
+
+    return chart.chartBitmap
+}
+
+
+fun configureChart(
+    context: Context,
+    chart: LineChart,
+    totalMeasurements: List<Measurement>,//muszą już być posortowane w kolejności rosnąco
+    startIdx: Int,
+    destinationValue: Float?,
+    movingAverage1: Int? = null,
+    movingAverage2: Int? = null,
+) {
+    Log.d(TAG,"configureChart")
+    if (totalMeasurements.isEmpty()) {
+        chart.clear()
+        return
+    }
     val measurementsOnChart = totalMeasurements.subList(startIdx, totalMeasurements.size)
     val startMillis = measurementsOnChart.first().timestamp.toEpochMilli()
     val periodOnChartDays = (measurementsOnChart.last().timestamp.toEpochMilli() -
             measurementsOnChart.first().timestamp.toEpochMilli()) / (1000 * 60 * 60 * 24)
     Log.d(TAG,"periodOnChartDays : $periodOnChartDays")
-    val totalEnties = createEntries(totalMeasurements, startMillis)
-    val entries = totalEnties.subList(startIdx, totalEnties.size)
+    val totalEntries = createEntries(totalMeasurements, startMillis)
+    val entries = totalEntries.subList(startIdx, totalEntries.size)
 
     chart.xAxis.apply {
         valueFormatter = DateAxisFormatter(startMillis, periodOnChartDays)
@@ -66,16 +128,6 @@ fun generateChartBitmap(
             setLabelCount((periodOnChartDays / 30).toInt(), true)
             Log.d(TAG,"Set labelCount to: ${(periodOnChartDays / 30).toInt()} -> $labelCount")
         }
-    }
-
-    chart.axisRight.isEnabled = true
-    chart.description.isEnabled = false
-
-    chart.legend.apply {
-        isEnabled = true
-        verticalAlignment = LegendVerticalAlignment.TOP
-        horizontalAlignment = LegendHorizontalAlignment.RIGHT
-        //yOffset = 4f
     }
 
     val average = measurementsOnChart.map { it.value }.average().toFloat()
@@ -120,7 +172,7 @@ fun generateChartBitmap(
     }
     if (movingAverage1 != null) {
         Log.d(TAG,"Generate MAV1, period: $movingAverage1")
-        val mavEntries = generateMovingAverageData(totalEnties, startIdx, movingAverage1)
+        val mavEntries = generateMovingAverageData(totalEntries, startIdx, movingAverage1)
         if (mavEntries.isNotEmpty()) {
             dataSets.add(
                 LineDataSet(mavEntries,
@@ -137,7 +189,7 @@ fun generateChartBitmap(
     }
     if (movingAverage2 != null) {
         Log.d(TAG,"Generate MAV2, period: $movingAverage2")
-        val mavEntries = generateMovingAverageData(totalEnties, startIdx, movingAverage2)
+        val mavEntries = generateMovingAverageData(totalEntries, startIdx, movingAverage2)
         if (mavEntries.isNotEmpty()) {
             dataSets.add(
                 LineDataSet(mavEntries,
@@ -155,32 +207,9 @@ fun generateChartBitmap(
 
     chart.data = LineData(dataSets.toList())
 
-//    val padding = Resources.getSystem().displayMetrics.density * (extPadding?:0)
-//    Log.d(TAG,"image padding: $padding")
-//    val screenWidth = Resources.getSystem().displayMetrics.widthPixels//-padding.toInt()
-//    val screenHeight = Resources.getSystem().displayMetrics.heightPixels
-//    Log.d(TAG,"screen size: ${screenWidth}x$screenHeight")
-//    Log.d(TAG,"screen size w.padding: ${Resources.getSystem().displayMetrics.widthPixels-padding.toInt()}x${Resources.getSystem().displayMetrics.heightPixels-padding.toInt()}")
-    val isLandscape = widthPx > heightPx
-    val height = heightPx
-    val width = if (isLandscape) {
-        (periodOnChartDays * 3.0 * widthPx / 365).toInt().coerceIn(widthPx, 4 * widthPx)
-    } else {
-        (periodOnChartDays * 3.0 * widthPx / 365).toInt().coerceIn(widthPx, 6 * widthPx)
-    }
-    Log.d(TAG,"chart size: ${width}x$height")
-    chart.measure(
-        View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
-        View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY)
-    )
-
-    chart.layout(0, 0, width, height)
-
-    return chart.chartBitmap
 }
 
 fun createEntries(measurements: List<Measurement>, startMillis: Long): List<Entry> {
-    if (measurements.isEmpty()) return emptyList()
     return measurements
         .mapIndexed { _, m -> //Int, Measurement
             Entry(
