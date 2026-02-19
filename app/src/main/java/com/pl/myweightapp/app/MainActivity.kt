@@ -29,18 +29,18 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
+import com.pl.myweightapp.core.presentation.UiEvent
 import com.pl.myweightapp.core.presentation.util.ObserveAsEvents
 import com.pl.myweightapp.core.presentation.util.toString
 import com.pl.myweightapp.core.ui.showErrorToast
 import com.pl.myweightapp.core.ui.showToast
+import com.pl.myweightapp.feature.addedit.AddMeasureDialog
+import com.pl.myweightapp.feature.addedit.AddMeasureViewModel
 import com.pl.myweightapp.navigation.AppBottomNavigationBar
 import com.pl.myweightapp.navigation.AppNavigationRail
 import com.pl.myweightapp.navigation.Navigation
 import com.pl.myweightapp.navigation.NavigationViewModel
 import com.pl.myweightapp.ui.theme.MyWeightAppTheme
-import com.pl.myweightapp.feature.addedit.AddMeasureDialog
-import com.pl.myweightapp.feature.addedit.AddMeasureViewModel
-import com.pl.myweightapp.core.presentation.UiEvent
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

@@ -1,10 +1,10 @@
 package com.pl.myweightapp.data.repository
 
 import androidx.room.withTransaction
+import com.pl.myweightapp.core.domain.WeightUnit
 import com.pl.myweightapp.data.local.MyDatabase
 import com.pl.myweightapp.data.local.WeightMeasureDao
 import com.pl.myweightapp.data.local.WeightMeasureEntity
-import com.pl.myweightapp.core.domain.WeightUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext

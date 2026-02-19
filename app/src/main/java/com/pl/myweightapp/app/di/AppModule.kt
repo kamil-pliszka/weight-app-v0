@@ -2,9 +2,9 @@ package com.pl.myweightapp.app.di
 
 import android.content.Context
 import androidx.room.Room
-import com.pl.myweightapp.data.preferences.AppSettingsManager
 import com.pl.myweightapp.data.local.MyDatabase
 import com.pl.myweightapp.data.preferences.AppSettingsDataSource
+import com.pl.myweightapp.data.preferences.AppSettingsManager
 import com.pl.myweightapp.data.repository.AppSettingsRepositoryImpl
 import com.pl.myweightapp.data.repository.NavigationBadgeRepository
 import com.pl.myweightapp.data.repository.UserProfileRepository

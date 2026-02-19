@@ -10,21 +10,20 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.pl.myweightapp.app.di.AppModule
 import com.pl.myweightapp.R
+import com.pl.myweightapp.app.di.AppModule
 import com.pl.myweightapp.core.Constants
-import com.pl.myweightapp.core.domain.DisplayPeriod
-import com.pl.myweightapp.data.local.UserProfileEntity
-import com.pl.myweightapp.data.local.WeightMeasureEntity
 import com.pl.myweightapp.core.domain.WeightUnit
-import com.pl.myweightapp.data.repository.sortWeightMeasureHistory
-import com.pl.myweightapp.feature.home.chart.Measurement
-import com.pl.myweightapp.feature.home.chart.generateChartBitmap
 import com.pl.myweightapp.core.util.kgToLbs
 import com.pl.myweightapp.core.util.lbsToKg
 import com.pl.myweightapp.core.util.toFloat1
 import com.pl.myweightapp.core.util.toInstant
 import com.pl.myweightapp.core.util.toLocalDate
+import com.pl.myweightapp.data.local.UserProfileEntity
+import com.pl.myweightapp.data.local.WeightMeasureEntity
+import com.pl.myweightapp.data.repository.sortWeightMeasureHistory
+import com.pl.myweightapp.feature.home.chart.Measurement
+import com.pl.myweightapp.feature.home.chart.generateChartBitmap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -135,8 +134,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                         isLoading = false,
                         weightHistory = history,
                         profile = profile,
-                        period = runCatching { DisplayPeriod.valueOf(settings.displayPeriod) }.getOrNull()
-                            ?: DisplayPeriod.P2M,
+                        period = runCatching { DisplayPeriod.valueOf(settings.displayPeriod) }.getOrDefault(DisplayPeriod.P2M),
                         movingAverage1 = settings.ma1,
                         movingAverage2 = settings.ma2,
                     )
@@ -321,7 +319,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private fun changePeriod(period: DisplayPeriod) {
         viewModelScope.launch {
             try {
-                appSettingsManager.changePeriod(period)
+                appSettingsManager.changePeriod(period.name)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

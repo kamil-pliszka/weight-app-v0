@@ -16,13 +16,13 @@ fun showErrorToast(context: Context, message: String) {
     val layout = LinearLayout(context).apply {
         orientation = LinearLayout.HORIZONTAL
         setPadding(24, 16, 24, 16)
-        //TODO - setBackgroundResource(R.color.background_dark) // lub custom bg
+        setBackgroundResource(android.R.color.background_dark) // lub custom bg
         gravity = Gravity.CENTER_VERTICAL
     }
 
     // Ikona błędu
     val imageView = ImageView(context).apply {
-        //TODO - setImageResource(R.drawable.ic_dialog_alert)
+        setImageResource(android.R.drawable.ic_dialog_alert)
         setColorFilter(Color.RED)
     }
 

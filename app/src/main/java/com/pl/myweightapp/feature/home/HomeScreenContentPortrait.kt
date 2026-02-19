@@ -36,7 +36,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.pl.myweightapp.R
-import com.pl.myweightapp.core.domain.DisplayPeriod
 import com.pl.myweightapp.core.ui.EnumDropdownButton
 
 private const val TAG = "HomeScreenPortrait"

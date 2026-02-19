@@ -15,8 +15,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.pl.myweightapp.data.local.WeightMeasureEntity
 import com.pl.myweightapp.core.domain.WeightUnit
+import com.pl.myweightapp.data.local.WeightMeasureEntity
 import com.pl.myweightapp.ui.theme.MyWeightAppTheme
 import java.time.Instant
 

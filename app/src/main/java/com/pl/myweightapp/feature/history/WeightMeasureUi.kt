@@ -4,9 +4,9 @@ import android.icu.text.NumberFormat
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import com.pl.myweightapp.R
+import com.pl.myweightapp.core.domain.WeightUnit
 import com.pl.myweightapp.core.util.toDateString
 import com.pl.myweightapp.data.local.WeightMeasureEntity
-import com.pl.myweightapp.core.domain.WeightUnit
 import java.math.BigDecimal
 import java.time.Instant
 import java.util.Locale

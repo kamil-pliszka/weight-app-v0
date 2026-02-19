@@ -13,7 +13,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.pl.myweightapp.R
-import com.pl.myweightapp.core.domain.DisplayPeriod
 import com.pl.myweightapp.core.presentation.util.ObserveAsEvents
 
 private const val TAG = "HomeScreen"

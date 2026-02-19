@@ -14,9 +14,9 @@ data class UserProfileEntity(
     val id: Int = 0, // ZAWSZE 1 rekord
     val age: Int? = null,
     val height: Int? = null,
-    val heightUnit: HeightUnit? = null,//TODO - do przeniesienia do datastore
+    val heightUnit: HeightUnit? = null,
     val targetWeight: BigDecimal? = null,
-    val weightUnit: WeightUnit? = null,//TODO - do przeniesienia do datastore
+    val weightUnit: WeightUnit? = null,
     val gender: Gender? = null,
     val photoPath: String? = null, // ścieżka do pliku
     val name: String? = null,

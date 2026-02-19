@@ -4,8 +4,8 @@ import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import com.pl.myweightapp.core.domain.AppSettings
-import com.pl.myweightapp.core.domain.DisplayPeriod
 import com.pl.myweightapp.data.repository.AppSettingsRepositoryImpl
+import com.pl.myweightapp.feature.home.DisplayPeriod
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -25,7 +25,6 @@ class AppSettingsManager(
         private const val TAG = "AppSettingsManager"
     }
 
-    //TODO - raczej do usuniecia
     val languageFlow: Flow<String> =
         repository.languageFlow.distinctUntilChanged()
     //val settingsFlow = repository.settingsFlow
@@ -61,7 +60,7 @@ class AppSettingsManager(
         )
     }
 
-    suspend fun changePeriod(period: DisplayPeriod) {
+    suspend fun changePeriod(period: String) {
         repository.updatePeriod(period)
     }
 

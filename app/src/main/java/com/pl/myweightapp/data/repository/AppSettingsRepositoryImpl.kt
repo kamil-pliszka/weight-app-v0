@@ -2,7 +2,6 @@ package com.pl.myweightapp.data.repository
 
 import com.pl.myweightapp.core.domain.AppSettings
 import com.pl.myweightapp.core.domain.AppSettingsRepository
-import com.pl.myweightapp.core.domain.DisplayPeriod
 import com.pl.myweightapp.data.preferences.AppSettingsDataSource
 import kotlinx.coroutines.flow.Flow
 
@@ -18,8 +17,8 @@ class AppSettingsRepositoryImpl(
         dataSource.updateLanguage(language)
     }
 
-    override suspend fun updatePeriod(period: DisplayPeriod) {
-        dataSource.updatePeriod(period.name)
+    override suspend fun updatePeriod(period: String) {
+        dataSource.updatePeriod(period)
     }
 
     override suspend fun updateMovingAverages(ma1: Int?, ma2: Int?) {
