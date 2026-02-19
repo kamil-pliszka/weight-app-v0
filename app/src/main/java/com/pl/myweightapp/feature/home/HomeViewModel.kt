@@ -45,7 +45,7 @@ import kotlin.coroutines.cancellation.CancellationException
 @Immutable
 data class UiState(
     val isLoading: Boolean = false,
-    val useEmbeddedChart: Boolean = Constants.USE_EMBEDDED_CHART,
+    val useEmbeddedChart: Boolean = Constants.DEFAULT_USE_EMBEDDED_CHART,
     val isProcessing: Boolean = false,
     //val progress: Float = 0f, // 0..1
     val chartBitmap: ImageBitmap? = null,
@@ -137,6 +137,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                         period = runCatching { DisplayPeriod.valueOf(settings.displayPeriod) }.getOrDefault(DisplayPeriod.P2M),
                         movingAverage1 = settings.ma1,
                         movingAverage2 = settings.ma2,
+                        useEmbeddedChart = settings.embeddedChart,
                     )
                 }
                 prepareDependentStateValues()

@@ -16,9 +16,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -118,9 +118,29 @@ fun SettingsScreen(
             DataRow(Modifier.clickable {
                 viewModel.onAction(Action.OnLanguageClick)
             }) {
-                Text(stringResource(R.string.settings_language))
-                Spacer(Modifier.width(24.dp))
-                Text(state.langDisplayResId?.let { stringResource(it) } ?: "–")
+                Text(modifier = Modifier.weight(1f), text = stringResource(R.string.settings_language))
+                Text(modifier = Modifier.weight(1f), text = state.langDisplayResId?.let { stringResource(it) } ?: "–")
+            }
+            DataRow {
+                Text(modifier = Modifier.weight(1f), text = stringResource(R.string.settings_dynamic_chart))
+//                Switch(
+//                    checked = state.useEmbeddedChart,
+//                    onCheckedChange = { checked ->
+//                        viewModel.onAction(
+//                            Action.OnChangeUseEmbeddedChart(checked)
+//                        )
+//                    }
+//                )
+                Row(modifier = Modifier.weight(1f)) {
+                    Checkbox(
+                        checked = state.useEmbeddedChart,
+                        onCheckedChange = { checked ->
+                            viewModel.onAction(
+                                Action.OnChangeUseEmbeddedChart(checked)
+                            )
+                        }
+                    )
+                }
             }
 
             ListItem(
@@ -216,6 +236,7 @@ private inline fun DataRow(
             .fillMaxWidth()
             .padding(16.dp),
         horizontalArrangement = Arrangement.Start,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         content()
     }

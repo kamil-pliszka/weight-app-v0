@@ -90,4 +90,5 @@
     <string name="settings_delete_all_success">Successfully deleted all data</string>
     <string name="settings_delete_all_error">Error during deleting data: %1$s</string>
     <string name="settings_lang_error">Error during changing lang: %1$s</string>
+    <string name="settings_dynamic_chart">Dynamic chart</string>
 </resources>

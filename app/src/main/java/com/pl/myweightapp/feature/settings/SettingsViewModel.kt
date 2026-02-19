@@ -36,6 +36,7 @@ data class UiState(
     val showLanguageChooser: Boolean = false,
     val langTag: String = "",
     val langDisplayResId: Int? = null,
+    val useEmbeddedChart: Boolean = false,
 )
 
 sealed interface Action {
@@ -47,6 +48,7 @@ sealed interface Action {
     object OnLanguageClick : Action
     object OnLanguageDismiss : Action
     data class OnLanguageChoose(val lang: String) : Action
+    data class OnChangeUseEmbeddedChart(val embedded: Boolean) : Action
 }
 
 sealed interface UiEvent {
@@ -65,20 +67,21 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val _events = Channel<UiEvent>(Channel.BUFFERED)
     val events = _events.receiveAsFlow()
 
-    private val languageManager = AppModule.provideAppSettingsManager()
+    private val appSettingsManager = AppModule.provideAppSettingsManager()
 
     init {
-        observeLanguage()
+        observeSettings()
     }
 
-    private fun observeLanguage() {
+    private fun observeSettings() {
         viewModelScope.launch {
-            languageManager.languageFlow.collect { tag ->
-                Log.d(TAG,"observeLanguage: $tag")
+            appSettingsManager.settingsFlow.collect { settings ->
+                Log.d(TAG,"observeSettings: $settings")
                 _state.update {
                     it.copy(
-                        langTag = tag,
-                        langDisplayResId = langDisplayResId(tag)
+                        langTag = settings.language,
+                        langDisplayResId = langDisplayResId(settings.language),
+                        useEmbeddedChart = settings.embeddedChart
                     )
                 }
             }
@@ -119,11 +122,19 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             }
 
             is Action.OnLanguageChoose -> {
-                Log.d(TAG, "lang: ${action.lang}")
                 setLanguage(action.lang)
                 _state.update { it.copy(showLanguageChooser = false) }
             }
+
+            is Action.OnChangeUseEmbeddedChart -> {
+                changeUseEmbeddedChart(action.embedded)
+            }
         }
+    }
+
+    private fun errorHandler(e : Throwable) {
+        Log.e(TAG, e.message, e)
+        sendEvent(UiEvent.Error((getApplication() as Context).getString(R.string.error_msg_prefix) + e.message))
     }
 
     private fun sendEvent(event: UiEvent) {
@@ -250,31 +261,18 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun setLanguage(tag: String) {
+    private fun setLanguage(tag: String) {
         Log.d(TAG, "setLanguage to: $tag")
-//        AppCompatDelegate.setApplicationLocales(
-//            LocaleListCompat.forLanguageTags(tag)
-//        )
         viewModelScope.launch {
             try {
-                //AppModule.provideUserProfileRepository().updateLang(tag)
-                //loadInitialLanguage()
-                //viewModelScope.launch {
-                languageManager.changeLanguage(tag)
-                //}
+                appSettingsManager.changeLanguage(tag)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                Log.e("setLanguage", e.message, e)
+                Log.e(TAG, e.message, e)
                 sendEvent(UiEvent.Error((getApplication() as Context).getString(R.string.settings_lang_error, e.message)))
             }
         }
-        /*
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val context = (getApplication() as Context)
-            context.getSystemService(LocaleManager::class.java)
-                .applicationLocales = LocaleList.forLanguageTags(tag)
-        }*/
     }
 
     private fun langDisplayResId(tag: String): Int? {
@@ -282,6 +280,19 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             "pl" -> R.string.lang_pl
             "en" -> R.string.lang_en
             else -> null
+        }
+    }
+
+    private fun changeUseEmbeddedChart(embeddedChart: Boolean) {
+        Log.d(TAG, "changeUseEmbeddeChart to: $embeddedChart")
+        viewModelScope.launch {
+            try {
+                appSettingsManager.updateEmbeddedChart(embeddedChart)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                errorHandler(e)
+            }
         }
     }
 }

@@ -17,5 +17,7 @@ interface AppSettingsRepository {
 
     suspend fun updateMovingAverages(ma1: Int?, ma2: Int?)
 
+    suspend fun updateEmbeddedChart(embeddedChart: Boolean)
+
     suspend fun clear()
 }

@@ -25,6 +25,7 @@ class AppSettingsDataSource(
         private val PERIOD_KEY = stringPreferencesKey("display_period")
         private val MA1_KEY = intPreferencesKey("ma1")
         private val MA2_KEY = intPreferencesKey("ma2")
+        private val EMBEDDED_CHART_KEY = stringPreferencesKey("embedded_chart")
     }
 
     val languageFlow: Flow<String> =
@@ -61,7 +62,8 @@ class AppSettingsDataSource(
                     language = prefs[LANG_KEY] ?: Locale.getDefault().toLanguageTag(),
                     displayPeriod = prefs[PERIOD_KEY] ?: Constants.DEFAULT_DISPLAY_PERIOD,
                     ma1 = prefs[MA1_KEY],
-                    ma2 = prefs[MA2_KEY]
+                    ma2 = prefs[MA2_KEY],
+                    embeddedChart = prefs[EMBEDDED_CHART_KEY]?.toBoolean() ?: Constants.DEFAULT_USE_EMBEDDED_CHART,
                 )
             }
             .distinctUntilChanged()
@@ -70,5 +72,9 @@ class AppSettingsDataSource(
         context.dataStore.edit { prefs ->
             prefs.clear() // usuwa wszystkie klucze zapisane w DataStore
         }
+    }
+
+    suspend fun updateEmbeddedChart(embeddedChart: Boolean) = withContext(Dispatchers.IO) {
+        context.dataStore.edit { it[EMBEDDED_CHART_KEY] = embeddedChart.toString() }
     }
 }

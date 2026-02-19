@@ -37,7 +37,8 @@ class AppSettingsManager(
                 language = "en",
                 displayPeriod = DisplayPeriod.P3M.name,
                 ma1 = null,
-                ma2 = null
+                ma2 = null,
+                embeddedChart = false,
             )
         )
 
@@ -66,6 +67,10 @@ class AppSettingsManager(
 
     suspend fun changeMovingAverages(ma1: Int?, ma2: Int?) {
         repository.updateMovingAverages(ma1, ma2)
+    }
+
+    suspend fun updateEmbeddedChart(embeddedChart: Boolean) {
+        repository.updateEmbeddedChart(embeddedChart)
     }
 
     suspend fun deleteAll() {

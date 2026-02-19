@@ -25,6 +25,10 @@ class AppSettingsRepositoryImpl(
         dataSource.updateMovingAverages(ma1, ma2)
     }
 
+    override suspend fun updateEmbeddedChart(embeddedChart: Boolean) {
+        dataSource.updateEmbeddedChart(embeddedChart)
+    }
+
     override suspend fun clear() {
         dataSource.deleteAll()
     }

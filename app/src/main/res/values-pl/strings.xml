@@ -90,4 +90,5 @@
     <string name="settings_delete_all_success">Wszystkie dane zostały usunięte</string>
     <string name="settings_delete_all_error">Nie udało się usunąć danych: %1$s</string>
     <string name="settings_lang_error">Zapis nie powiodł się: %1$s</string>
+    <string name="settings_dynamic_chart">Dynamiczny wykres</string>
 </resources>
