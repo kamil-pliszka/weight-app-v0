@@ -9,7 +9,7 @@
     <string name="weight_unit_lb">lb</string>
     <string name="successfully_saved">Saved successfully</string>
     <string name="successfully_deleted">Deleted successfully</string>
-    <string name="error_msg_prefix">Error during processing: </string>
+    <string name="error_msg_prefix">Error during processing: %1$s</string>
     <string name="period_2w">2W</string>
     <string name="period_1m">1M</string>
     <string name="period_2m">2M</string>
@@ -91,4 +91,7 @@
     <string name="settings_delete_all_error">Error during deleting data: %1$s</string>
     <string name="settings_lang_error">Error during changing lang: %1$s</string>
     <string name="settings_dynamic_chart">Dynamic chart</string>
+    <string name="profile_incorrect_age">Incorrect age</string>
+    <string name="profile_incorrect_height">Incorrect height</string>
+    <string name="profile_incorrect_weight">Incorrect weight</string>
 </resources>

@@ -2,22 +2,18 @@ package com.pl.myweightapp.feature.addedit
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.pl.myweightapp.app.di.AppModule
 import com.pl.myweightapp.core.domain.WeightUnit
-import com.pl.myweightapp.core.presentation.UiEvent
-import com.pl.myweightapp.core.util.exceptionToString
+import com.pl.myweightapp.core.presentation.DefaultUiEventOwner
+import com.pl.myweightapp.core.presentation.UiEventOwner
+import com.pl.myweightapp.core.presentation.launchSafely
 import com.pl.myweightapp.core.util.toInstant
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.LocalDate
-import kotlin.coroutines.cancellation.CancellationException
 
 
 data class AddMeasureState(
@@ -29,34 +25,16 @@ data class AddMeasureState(
     val choosenDate: LocalDate = LocalDate.now(),
 )
 
-class AddMeasureViewModel : ViewModel() {
+class AddMeasureViewModel : ViewModel(), UiEventOwner by DefaultUiEventOwner() {
     companion object {
         private const val TAG = "AddMeasureVM"
     }
-    private val _events = Channel<UiEvent>(Channel.BUFFERED)
-    val events = _events.receiveAsFlow()
     private val _state = MutableStateFlow(AddMeasureState())
     val state = _state.asStateFlow()
 
-    private fun launchWithErrorHandling(
-        block: suspend () -> Unit
-    ) {
-        viewModelScope.launch {
-            try {
-                block()
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Throwable) {
-                Log.e("AddMeasureViewModel", "error", e)
-                //withContext(Dispatchers.Main) {
-                    _events.send(UiEvent.IOError(exceptionToString(e)))
-                //}
-            }
-        }
-    }
 
     fun onShowDialogAction() {
-        launchWithErrorHandling {
+        launchSafely {
             val value = AppModule.provideWeightMeasureRepository().findLastWeightMeasure()
             if (value != null) {
                 _state.update { it.copy(lastWeight = value, currentWeightMeasure = value) }
@@ -75,7 +53,7 @@ class AddMeasureViewModel : ViewModel() {
         } else {
             choosenDate.toInstant()
         }
-        launchWithErrorHandling {
+        launchSafely {
             AppModule.provideWeightMeasureRepository().insertMeasure(
                 date = instantDate,
                 weight = currentMeasure,

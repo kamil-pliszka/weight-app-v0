@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Checkbox
@@ -27,7 +28,6 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -41,8 +41,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.pl.myweightapp.R
-import com.pl.myweightapp.core.presentation.util.ObserveAsEvents
 import com.pl.myweightapp.core.ui.ConfirmationDialog
+import com.pl.myweightapp.core.ui.UiEventConsumer
 
 private const val TAG = "SettingsScreen"
 
@@ -72,18 +72,10 @@ fun SettingsScreen(
         }
     }
 
-    val messageErrorPrefix = stringResource(R.string.error_msg_prefix)
-    ObserveAsEvents(viewModel.events) { event ->
-        Log.d(TAG, "got event: $event")
-        when (event) {
-            is UiEvent.Error -> snackbarHostState.showSnackbar(
-                messageErrorPrefix + event.message,
-                duration = SnackbarDuration.Long
-            )
-
-            is UiEvent.Info -> snackbarHostState.showSnackbar(event.message)
-        }
-    }
+    UiEventConsumer(
+        events = viewModel.events,
+        snackbarHostState = snackbarHostState
+    )
 
     if (state.isLoading) {
         Box(
@@ -131,16 +123,16 @@ fun SettingsScreen(
 //                        )
 //                    }
 //                )
-                Row(modifier = Modifier.weight(1f)) {
-                    Checkbox(
-                        checked = state.useEmbeddedChart,
-                        onCheckedChange = { checked ->
-                            viewModel.onAction(
-                                Action.OnChangeUseEmbeddedChart(checked)
-                            )
-                        }
-                    )
-                }
+                Checkbox(modifier = Modifier
+                    .weight(1f)
+                    .wrapContentWidth(Alignment.Start),
+                    checked = state.useEmbeddedChart,
+                    onCheckedChange = { checked ->
+                        viewModel.onAction(
+                            Action.OnChangeUseEmbeddedChart(checked)
+                        )
+                    }
+                )
             }
 
             ListItem(

@@ -1,6 +1,5 @@
 package com.pl.myweightapp.app
 
-import android.content.Context
 import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.compose.setContent
@@ -25,15 +24,10 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
-import com.pl.myweightapp.core.presentation.UiEvent
-import com.pl.myweightapp.core.presentation.util.ObserveAsEvents
-import com.pl.myweightapp.core.presentation.util.toString
-import com.pl.myweightapp.core.ui.showErrorToast
-import com.pl.myweightapp.core.ui.showToast
+import com.pl.myweightapp.core.ui.UiEventConsumer
 import com.pl.myweightapp.feature.addedit.AddMeasureDialog
 import com.pl.myweightapp.feature.addedit.AddMeasureViewModel
 import com.pl.myweightapp.navigation.AppBottomNavigationBar
@@ -52,10 +46,10 @@ class MainActivity : AppCompatActivity() {
             val navController = rememberNavController()
 
             val vmAddMeasure : AddMeasureViewModel = viewModel()
-            val context = LocalContext.current
-            ObserveAsEvents(events = vmAddMeasure.events) { event ->
-                displayEvent(event, context)
-            }
+            UiEventConsumer(
+                events = vmAddMeasure.events,
+                snackbarHostState = snackBarState
+            )
             val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
             val navigationVM: NavigationViewModel by viewModels()
 
@@ -124,13 +118,3 @@ class MainActivity : AppCompatActivity() {
         }
     }
 }
-
-fun displayEvent(event: UiEvent, context: Context) {
-    when(event) {
-        is UiEvent.IOError -> showErrorToast(context, event.error)
-        is UiEvent.NetError -> showErrorToast(context, event.error.toString(context))
-        is UiEvent.Succes -> showToast(context, event.msg)
-        is UiEvent.Info -> showToast(context, event.msg)
-    }
-}
-

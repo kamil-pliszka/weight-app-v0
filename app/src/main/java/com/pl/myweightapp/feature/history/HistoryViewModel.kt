@@ -4,11 +4,15 @@ import android.util.Log
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.pl.myweightapp.R
 import com.pl.myweightapp.app.di.AppModule
+import com.pl.myweightapp.core.presentation.DefaultUiEventOwner
+import com.pl.myweightapp.core.presentation.UiEventOwner
+import com.pl.myweightapp.core.presentation.launchSafely
+import com.pl.myweightapp.core.presentation.sendInfo
 import com.pl.myweightapp.data.local.WeightMeasureEntity
 import com.pl.myweightapp.data.repository.sortWeightMeasureHistory
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,10 +21,8 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlin.coroutines.cancellation.CancellationException
 
 sealed interface HistoryAction {
     data class OnItemEditAction(val itemUI: WieghtMeasureUi) : HistoryAction
@@ -30,12 +32,6 @@ sealed interface HistoryAction {
     object OnCancelDeleteAction : HistoryAction
     object OnRefreshAction : HistoryAction
 }
-
-sealed interface UiEvent {
-    data object Deleted : UiEvent
-    data class Error(val message: String) : UiEvent
-}
-
 
 @Immutable
 data class HistoryUiState(
@@ -47,13 +43,11 @@ data class HistoryUiState(
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class HistoryViewModel : ViewModel() {
+//class HistoryViewModel : ViewModel() {
+class HistoryViewModel : ViewModel(), UiEventOwner by DefaultUiEventOwner() {
     companion object {
         private const val TAG = "HistoryVM"
     }
-
-    private val _events = Channel<UiEvent>(Channel.BUFFERED)
-    val events = _events.receiveAsFlow()
 
     private val _state = MutableStateFlow(HistoryUiState())
     val state: StateFlow<HistoryUiState> = _state
@@ -177,16 +171,10 @@ class HistoryViewModel : ViewModel() {
     }
 
     private fun onConfirmDelete(itemId: Long) {
-        viewModelScope.launch {
-            try {
-                repository.delete(itemId)
-                _events.send(UiEvent.Deleted)
-                _state.update { it.copy(deletingItem = null) }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                _events.send(UiEvent.Error("Delete failed: ${e.message}"))
-            }
+        launchSafely {
+            repository.delete(itemId)
+            sendInfo(R.string.successfully_deleted)
+            _state.update { it.copy(deletingItem = null) }
         }
     }
 

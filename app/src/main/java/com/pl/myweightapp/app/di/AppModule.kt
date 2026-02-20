@@ -2,6 +2,7 @@ package com.pl.myweightapp.app.di
 
 import android.content.Context
 import androidx.room.Room
+import com.pl.myweightapp.app.di.AppModule.appContext
 import com.pl.myweightapp.data.local.MyDatabase
 import com.pl.myweightapp.data.preferences.AppSettingsDataSource
 import com.pl.myweightapp.data.preferences.AppSettingsManager
@@ -56,4 +57,6 @@ object AppModule {
     fun provideAppSettingsManager() = appSettingsManager
 
     fun provideNavBadgeRepository() = navBadgeRepository
+
+    fun provideContext() = appContext
 }

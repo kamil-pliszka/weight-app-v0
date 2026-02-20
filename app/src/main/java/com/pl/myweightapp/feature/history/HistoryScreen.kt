@@ -25,8 +25,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.pl.myweightapp.R
-import com.pl.myweightapp.core.presentation.util.ObserveAsEvents
 import com.pl.myweightapp.core.ui.ConfirmationDialog
+import com.pl.myweightapp.core.ui.UiEventConsumer
 import com.pl.myweightapp.feature.addedit.EditMeasureDialog
 import kotlinx.coroutines.launch
 
@@ -98,7 +98,7 @@ fun HistoryScreen(
         }
     }
 
-    val scope = rememberCoroutineScope()
+    //val scope = rememberCoroutineScope()
     state.editingItemId?.let { itemId ->
         //Log.d(TAG,"composable state.editingItemId is set")
 //        val editVm: EditMeasureViewModel = viewModel(key = "edit-$itemId") {
@@ -111,7 +111,6 @@ fun HistoryScreen(
                 viewModel.onAction(HistoryAction.OnCloseEditAction)
             },
             snackbarHostState = snackbarHostState,
-            scope = scope,
             //viewModel = editVm
         )
     }
@@ -134,17 +133,8 @@ fun HistoryScreen(
         )
     }
 
-    val messageSuccessfulyDeleted = stringResource(R.string.successfully_deleted)
-    val messageErrorPrefix = stringResource(R.string.error_msg_prefix)
-    ObserveAsEvents(viewModel.events) { event ->
-        Log.d(TAG,"got output event: $event")
-        scope.launch {
-            val msg = when (event) {
-                UiEvent.Deleted -> messageSuccessfulyDeleted
-                is UiEvent.Error -> messageErrorPrefix + event.message
-            }
-            snackbarHostState.showSnackbar(msg)
-        }
-    }
-
+    UiEventConsumer(
+        events = viewModel.events,
+        snackbarHostState = snackbarHostState
+    )
 }

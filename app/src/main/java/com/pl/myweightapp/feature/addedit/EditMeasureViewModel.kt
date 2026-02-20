@@ -3,18 +3,20 @@ package com.pl.myweightapp.feature.addedit
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.pl.myweightapp.R
 import com.pl.myweightapp.app.di.AppModule
+import com.pl.myweightapp.core.presentation.DefaultUiEventOwner
+import com.pl.myweightapp.core.presentation.UiEventOwner
+import com.pl.myweightapp.core.presentation.launchSafely
+import com.pl.myweightapp.core.presentation.sendInfo
 import com.pl.myweightapp.feature.history.WeightUnitUi
 import com.pl.myweightapp.feature.history.toWeightUnit
 import com.pl.myweightapp.feature.history.toWeightUnitUi
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.time.Instant
-import kotlin.coroutines.cancellation.CancellationException
 
 //@Immutable
 sealed interface EditMeasureUiState {
@@ -33,22 +35,12 @@ sealed interface EditMeasureUiState {
     //data class Error(val message: String) : EditMeasureUiState
 }
 
-sealed interface UiEvent {
-    data object Saved : UiEvent
-    data object Deleted : UiEvent
-    data class Error(val message: String) : UiEvent
-}
-
 class EditMeasureViewModel(
     val itemId: Long,
-) : ViewModel() {
+) : ViewModel(), UiEventOwner by DefaultUiEventOwner() {
     companion object {
         private const val TAG = "EditMeasureVM"
     }
-
-    //output events
-    private val _events = Channel<UiEvent>(Channel.BUFFERED)
-    val events = _events.receiveAsFlow()
 
     private val _state = MutableStateFlow<EditMeasureUiState>(EditMeasureUiState.Loading)
     val state = _state.asStateFlow()
@@ -86,6 +78,7 @@ class EditMeasureViewModel(
         }
     }
 
+    /*
     fun updateWeightUnit(weightUnit: WeightUnitUi) {
         val current = _state.value
         if (current is EditMeasureUiState.Loaded) {
@@ -94,6 +87,7 @@ class EditMeasureViewModel(
             )
         }
     }
+    */
 
 
     fun onSaveAction(/*closeDialogHandler : () -> Unit*/) {
@@ -101,23 +95,16 @@ class EditMeasureViewModel(
         if (current !is EditMeasureUiState.Loaded) return
 
         _state.value = EditMeasureUiState.Saving
-        viewModelScope.launch {
-            try {
-                AppModule.provideWeightMeasureRepository().update(
-                    id = itemId,
-                    date = current.date,
-                    weight = current.weight,
-                    unit = current.unit.toWeightUnit()
-                )
-                //_state.value = EditMeasureUiState.Saved
-                //_state.value = current
-                _events.send(UiEvent.Saved)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                //_state.value = EditMeasureUiState.Error(e.message ?: "Save failed")
-                _events.send(UiEvent.Error("Save failed: ${e.message}"))
-            }
+        launchSafely {
+            AppModule.provideWeightMeasureRepository().update(
+                id = itemId,
+                date = current.date,
+                weight = current.weight,
+                unit = current.unit.toWeightUnit()
+            )
+            //_state.value = EditMeasureUiState.Saved
+            //_state.value = current
+            sendInfo(R.string.successfully_saved)
         }
     }
 
@@ -136,15 +123,9 @@ class EditMeasureViewModel(
     }
 
     fun onConfirmDelete() {
-        viewModelScope.launch {
-            try {
-                AppModule.provideWeightMeasureRepository().delete(itemId)
-                _events.send(UiEvent.Deleted)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                _events.send(UiEvent.Error("Delete failed: ${e.message}"))
-            }
+        launchSafely {
+            AppModule.provideWeightMeasureRepository().delete(itemId)
+            sendInfo(R.string.successfully_deleted)
         }
     }
 

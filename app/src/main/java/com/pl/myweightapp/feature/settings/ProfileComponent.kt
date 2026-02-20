@@ -49,7 +49,7 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.pl.myweightapp.R
-import com.pl.myweightapp.core.presentation.util.ObserveAsEvents
+import com.pl.myweightapp.core.ui.UiEventConsumer
 import com.pl.myweightapp.data.local.Gender
 import java.io.File
 
@@ -62,12 +62,12 @@ fun ProfileComponent(
     viewModel: ProfileViewModel = viewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    ObserveAsEvents(viewModel.events) { event ->
-        when (event) {
-            is ProfileEvent.Error -> snackbarHostState.showSnackbar(event.message)
-            is ProfileEvent.Saved -> snackbarHostState.showSnackbar(event.message)
-        }
-    }
+
+    UiEventConsumer(
+        events = viewModel.events,
+        snackbarHostState = snackbarHostState
+    )
+
     ProfileContent(
         modifier = modifier,
         state = state,

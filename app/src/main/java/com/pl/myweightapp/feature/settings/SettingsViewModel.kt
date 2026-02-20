@@ -1,31 +1,30 @@
 package com.pl.myweightapp.feature.settings
 
-import android.app.Application
-import android.content.Context
 import android.net.Uri
 import android.util.Log
 import androidx.compose.runtime.Immutable
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pl.myweightapp.R
 import com.pl.myweightapp.app.di.AppModule
 import com.pl.myweightapp.core.Constants
+import com.pl.myweightapp.core.presentation.DefaultUiEventOwner
+import com.pl.myweightapp.core.presentation.UiEventOwner
+import com.pl.myweightapp.core.presentation.launchSafely
+import com.pl.myweightapp.core.presentation.sendInfo
 import com.pl.myweightapp.data.csv.CsvParseException
 import com.pl.myweightapp.data.csv.exportWeightCsv
 import com.pl.myweightapp.data.csv.getFileNameFromUri
 import com.pl.myweightapp.data.csv.importWeightCsv
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import kotlin.coroutines.cancellation.CancellationException
 
 @Immutable
 data class UiState(
@@ -51,22 +50,13 @@ sealed interface Action {
     data class OnChangeUseEmbeddedChart(val embedded: Boolean) : Action
 }
 
-sealed interface UiEvent {
-    //data object OpenFilePicker : UiEvent
-    data class Error(val message: String) : UiEvent
-    data class Info(val message: String) : UiEvent
-}
-
-class SettingsViewModel(application: Application) : AndroidViewModel(application) {
+class SettingsViewModel : ViewModel(), UiEventOwner by DefaultUiEventOwner() {
     companion object {
         private const val TAG = "SettingsVM"
     }
 
     private val _state = MutableStateFlow(UiState())
     val state = _state.asStateFlow()
-    private val _events = Channel<UiEvent>(Channel.BUFFERED)
-    val events = _events.receiveAsFlow()
-
     private val appSettingsManager = AppModule.provideAppSettingsManager()
 
     init {
@@ -76,7 +66,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private fun observeSettings() {
         viewModelScope.launch {
             appSettingsManager.settingsFlow.collect { settings ->
-                Log.d(TAG,"observeSettings: $settings")
+                Log.d(TAG, "observeSettings: $settings")
                 _state.update {
                     it.copy(
                         langTag = settings.language,
@@ -87,6 +77,15 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             }
         }
     }
+
+    private fun langDisplayResId(tag: String): Int? {
+        return when (tag) {
+            "pl" -> R.string.lang_pl
+            "en" -> R.string.lang_en
+            else -> null
+        }
+    }
+
 
     fun onAction(action: Action) {
         when (action) {
@@ -132,50 +131,43 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    private fun errorHandler(e : Throwable) {
-        Log.e(TAG, e.message, e)
-        sendEvent(UiEvent.Error((getApplication() as Context).getString(R.string.error_msg_prefix) + e.message))
+    private suspend inline fun <T> withLoading(
+        crossinline block: suspend () -> T
+    ): T {
+        return try {
+            _state.update { it.copy(isLoading = true) }
+            block()
+        } finally {
+            _state.update { it.copy(isLoading = false) }
+        }
     }
 
-    private fun sendEvent(event: UiEvent) {
-        viewModelScope.launch {
-            _events.send(event)
+    private suspend inline fun <T> withCsvProcessing(
+        crossinline block: suspend () -> T
+    ): T {
+        return try {
+            _state.update { it.copy(isCsvProcessing = true) }
+            block()
+        } finally {
+            _state.update { it.copy(isCsvProcessing = false) }
         }
     }
 
     private fun processCsvImport(uri: Uri) {
         Log.d(TAG, "CSV import uri: $uri")
-        val context = (getApplication() as Context)
-        val mime = context.contentResolver.getType(uri)
-        Log.d(TAG, "mime: $mime")
-        viewModelScope.launch {
-            _state.update { it.copy(isCsvProcessing = true) }
-            try {
-                val entriesCount = importWeightCsv(context, uri) { progress ->
-                    _state.update { it.copy(csvProgress = progress) }
+        launchSafely {
+            withCsvProcessing {
+                val context = AppModule.provideContext()
+                val mime = context.contentResolver.getType(uri)
+                Log.d(TAG, "mime: $mime")
+                try {
+                    val entriesCount = importWeightCsv(context, uri) { progress ->
+                        _state.update { it.copy(csvProgress = progress) }
+                    }
+                    sendInfo(R.string.settings_csv_import_success, entriesCount)
+                } catch (e: CsvParseException) {
+                    sendInfo(R.string.settings_csv_import_parsing_error, e.message ?: "")
                 }
-                sendEvent(UiEvent.Info(
-                    context.getString(
-                        R.string.settings_csv_import_success,
-                        entriesCount
-                    )))
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: CsvParseException) {
-                sendEvent(UiEvent.Error(
-                    context.getString(
-                        R.string.settings_csv_import_parsing_error,
-                        e.message
-                    )))
-            } catch (e: Exception) {
-                Log.e("CsvImport", e.message, e)
-                sendEvent(UiEvent.Error(
-                    context.getString(
-                        R.string.settings_csv_import_error,
-                        e.message
-                    )))
-            } finally {
-                _state.update { it.copy(isCsvProcessing = false) }
             }
         }
     }
@@ -188,41 +180,27 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     private fun processCsvExport(uri: Uri) {
         Log.d(TAG, "CSV export uri: $uri")
-        val context = (getApplication() as Context)
-        val mime = context.contentResolver.getType(uri)
-        val filename = getFileNameFromUri(context, uri)
-        Log.d(TAG, "mime: $mime, filename: $filename")
-        viewModelScope.launch {
-            _state.update { it.copy(isCsvProcessing = true) }
-            try {
+        launchSafely {
+            withCsvProcessing {
+                val context = AppModule.provideContext()
+                val mime = context.contentResolver.getType(uri)
+                val filename = getFileNameFromUri(context, uri)
+                Log.d(TAG, "mime: $mime, filename: $filename")
                 val entriesCount = exportWeightCsv(context, uri) { progress ->
                     _state.update { it.copy(csvProgress = progress) }
                 }
-                sendEvent(UiEvent.Info(
-                    context.getString(
-                        R.string.settings_csv_export_success,
-                        entriesCount,
-                        filename
-                    )))
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Log.e("CsvExport", e.message, e)
-                sendEvent(UiEvent.Error(
-                    context.getString(
-                        R.string.settings_csv_export_error,
-                        e.message
-                    )))
-            } finally {
-                _state.update { it.copy(isCsvProcessing = false) }
+                sendInfo(
+                    R.string.settings_csv_export_success,
+                    entriesCount,
+                    filename ?: ""
+                )
             }
         }
     }
 
     private fun processDeleteAllData() {
-        viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
-            try {
+        launchSafely {
+            withLoading {
                 //usuniecie pomiarów
                 AppModule.provideWeightMeasureRepository().deleteAll()
                 //usunięcie profilu
@@ -230,25 +208,14 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 //usunięcie ustawień
                 AppModule.provideAppSettingsManager().deleteAll()
                 deleteAppFiles()
-                sendEvent(UiEvent.Info((getApplication() as Context).getString(R.string.settings_delete_all_success)))
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Log.e("DeleteAll", e.message, e)
-                sendEvent(UiEvent.Error(
-                    (getApplication() as Context).getString(
-                        R.string.settings_delete_all_error,
-                        e.message
-                    )))
-            } finally {
-                _state.update { it.copy(isLoading = false) }
+                sendInfo(R.string.settings_delete_all_success)
             }
         }
     }
 
     private suspend fun deleteAppFiles() = withContext(Dispatchers.IO) {
         //usunięcie wygenerowanego wykresu
-        val context = (getApplication() as Context)
+        val context = AppModule.provideContext()
         val fileChart = File(context.filesDir, Constants.WEIGHT_CHART_FILENAME)
         if (fileChart.exists()) {
             Log.d(TAG, "Delete ${Constants.WEIGHT_CHART_FILENAME}")
@@ -263,36 +230,16 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     private fun setLanguage(tag: String) {
         Log.d(TAG, "setLanguage to: $tag")
-        viewModelScope.launch {
-            try {
-                appSettingsManager.changeLanguage(tag)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Log.e(TAG, e.message, e)
-                sendEvent(UiEvent.Error((getApplication() as Context).getString(R.string.settings_lang_error, e.message)))
-            }
+        launchSafely {
+            appSettingsManager.changeLanguage(tag)
         }
     }
 
-    private fun langDisplayResId(tag: String): Int? {
-        return when (tag) {
-            "pl" -> R.string.lang_pl
-            "en" -> R.string.lang_en
-            else -> null
-        }
-    }
 
     private fun changeUseEmbeddedChart(embeddedChart: Boolean) {
         Log.d(TAG, "changeUseEmbeddeChart to: $embeddedChart")
-        viewModelScope.launch {
-            try {
-                appSettingsManager.updateEmbeddedChart(embeddedChart)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                errorHandler(e)
-            }
+        launchSafely {
+            appSettingsManager.updateEmbeddedChart(embeddedChart)
         }
     }
 }

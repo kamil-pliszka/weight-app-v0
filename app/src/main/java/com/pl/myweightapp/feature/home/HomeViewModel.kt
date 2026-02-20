@@ -1,6 +1,5 @@
 package com.pl.myweightapp.feature.home
 
-import android.app.Application
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -8,12 +7,14 @@ import android.util.Log
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.pl.myweightapp.R
 import com.pl.myweightapp.app.di.AppModule
 import com.pl.myweightapp.core.Constants
 import com.pl.myweightapp.core.domain.WeightUnit
+import com.pl.myweightapp.core.presentation.DefaultUiEventOwner
+import com.pl.myweightapp.core.presentation.UiEventOwner
+import com.pl.myweightapp.core.presentation.launchSafely
 import com.pl.myweightapp.core.util.kgToLbs
 import com.pl.myweightapp.core.util.lbsToKg
 import com.pl.myweightapp.core.util.toFloat1
@@ -25,7 +26,6 @@ import com.pl.myweightapp.data.repository.sortWeightMeasureHistory
 import com.pl.myweightapp.feature.home.chart.Measurement
 import com.pl.myweightapp.feature.home.chart.generateChartBitmap
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -33,14 +33,11 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.math.BigDecimal
-import kotlin.coroutines.cancellation.CancellationException
 
 @Immutable
 data class UiState(
@@ -71,27 +68,28 @@ sealed interface Action {
     data class OnChangeMovingAverages(val ma1: Int?, val ma2: Int?) : Action
 }
 
-sealed interface UiEvent {
-    //data object OpenFilePicker : UiEvent
-    data class Error(val message: String) : UiEvent
-    data class Info(val message: String) : UiEvent
-}
-
-class HomeViewModel(application: Application) : AndroidViewModel(application) {
+class HomeViewModel : ViewModel(), UiEventOwner by DefaultUiEventOwner() {
     companion object {
-        private const val TAG = "ChartVM"
+        private const val TAG = "HomeVM"
     }
-
 
     private val _state = MutableStateFlow(UiState())
     val state = _state.asStateFlow()
-    private val _events = Channel<UiEvent>(Channel.BUFFERED)
-    val events = _events.receiveAsFlow()
-
     private val weightRepo = AppModule.provideWeightMeasureRepository()
     private val profileRepo = AppModule.provideUserProfileRepository()
 
     private val appSettingsManager = AppModule.provideAppSettingsManager()
+
+    private suspend inline fun <T> withProcessing(
+        crossinline block: suspend () -> T
+    ): T {
+        return try {
+            _state.update { it.copy(isProcessing = true) }
+            block()
+        } finally {
+            _state.update { it.copy(isProcessing = false) }
+        }
+    }
 
 
     fun onAction(action: Action) {
@@ -211,9 +209,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         Log.d(TAG, "Generate chart ${state.value.chartWidthPx}x${state.value.chartHeightPx}")
         Log.d(TAG, "Proifle: ${state.value.profile}")
         Log.d(TAG, "Measurements: ${state.value.weightHistory.size}")
-        viewModelScope.launch {
-            _state.update { it.copy(isProcessing = true) }
-            try {
+        launchSafely {
+            withProcessing {
                 val history = state.value.weightHistory.reversed()
                 val startIdx = state.value.periodStartEntity?.let {
                     history.indexOf(it)
@@ -224,7 +221,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 )
                 if (measurements.isNotEmpty() && state.value.chartWidthPx > 0 && state.value.chartHeightPx > 0) {
                     val bitmap = generateChartBitmap(
-                        context = getApplication(),
+                        context = AppModule.provideContext(),
                         totalMeasurements = measurements,
                         startIdx = startIdx,
                         widthPx = state.value.chartWidthPx,
@@ -248,32 +245,17 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                         it.copy(chartBitmap = null)
                     }
                 }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Log.e("refreshChart", e.message, e)
-                sendEvent(UiEvent.Error(
-                    (getApplication() as Context).getString(
-                        R.string.home_cannot_generate_chart,
-                        e.message
-                    )))
             }
-            _state.update { it.copy(isProcessing = false) }
         }
     }
 
-    private fun sendEvent(event: UiEvent) {
-        viewModelScope.launch {
-            _events.send(event)
-        }
-    }
 
     // w ViewModel
-    fun exportChart(bitmap: Bitmap) {
-        viewModelScope.launch {
+    private fun exportChart(bitmap: Bitmap) {
+        launchSafely {
             Log.d(TAG, "Exporting chart")
             val file = saveBitmapToFileAsync(
-                getApplication(),
+                AppModule.provideContext(),
                 bitmap,
                 Constants.WEIGHT_CHART_FILENAME
             )
@@ -281,7 +263,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    suspend fun saveBitmapToFileAsync(
+    private suspend fun saveBitmapToFileAsync(
         context: Context,
         bitmap: Bitmap,
         fileName: String
@@ -295,10 +277,10 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun tryToLoadFromFile() {
-        viewModelScope.launch {
+        launchSafely {
             withContext(Dispatchers.IO) {
                 Log.d(TAG, "tryToLoadFromFile")
-                val context = getApplication() as Context
+                val context = AppModule.provideContext()
                 val file = File(context.filesDir, Constants.WEIGHT_CHART_FILENAME)
                 val bitmap = loadBitmapFromFile(file)
                 if (bitmap != null) {
@@ -318,31 +300,17 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun changePeriod(period: DisplayPeriod) {
-        viewModelScope.launch {
-            try {
-                appSettingsManager.changePeriod(period.name)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Log.e("updatePeriod", e.message, e)
-                sendEvent(UiEvent.Error((getApplication() as Context).getString(R.string.home_cannot_save_data, e.message)))
-            }
+        launchSafely {
+            appSettingsManager.changePeriod(period.name)
         }
     }
 
     private fun changeMovingAverages(ma1: Int?, ma2: Int?) {
-        viewModelScope.launch {
-            try {
-                appSettingsManager.changeMovingAverages(
-                    if (ma1 == null || ma1 <= 1) null else ma1,
-                    if (ma2 == null || ma2 <= 1) null else ma2
-                )
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Log.e("changeMovingAverages", e.message, e)
-                sendEvent(UiEvent.Error((getApplication() as Context).getString(R.string.home_cannot_save_data, e.message)))
-            }
+        launchSafely {
+            appSettingsManager.changeMovingAverages(
+                if (ma1 == null || ma1 <= 1) null else ma1,
+                if (ma2 == null || ma2 <= 1) null else ma2
+            )
         }
     }
 }

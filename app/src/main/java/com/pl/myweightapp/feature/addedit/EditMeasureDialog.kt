@@ -1,6 +1,5 @@
 package com.pl.myweightapp.feature.addedit
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,20 +29,17 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.pl.myweightapp.R
-import com.pl.myweightapp.core.presentation.util.ObserveAsEvents
+import com.pl.myweightapp.core.presentation.util.observeAsEvents
 import com.pl.myweightapp.core.ui.ConfirmationDialog
+import com.pl.myweightapp.core.ui.UiEventConsumer
 import com.pl.myweightapp.core.util.toDateString
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 
-private const val TAG = "EditMeasureDialog"
 @Composable
 fun EditMeasureDialog(
     modifier: Modifier = Modifier,
     itemId: Long,
     onDismiss: () -> Unit,
     snackbarHostState: SnackbarHostState,
-    scope: CoroutineScope,
     viewModel: EditMeasureViewModel = viewModel(key = "edit-$itemId") {
         EditMeasureViewModel(itemId)
     }
@@ -165,19 +161,11 @@ fun EditMeasureDialog(
         */
     }
 
-    val messageSuccessfulySaved = stringResource(R.string.successfully_saved)
-    val messageSuccessfulyDeleted = stringResource(R.string.successfully_deleted)
-    val messageErrorPrefix = stringResource(R.string.error_msg_prefix)
-    ObserveAsEvents(viewModel.events) { event ->
-        Log.d(TAG,"got output event: $event")
-        scope.launch {
-            val msg = when (event) {
-                UiEvent.Deleted -> messageSuccessfulyDeleted
-                UiEvent.Saved -> messageSuccessfulySaved
-                is UiEvent.Error -> messageErrorPrefix + event.message
-            }
-            snackbarHostState.showSnackbar(msg)
-        }
+    UiEventConsumer(
+        events = viewModel.events,
+        snackbarHostState = snackbarHostState
+    )
+    observeAsEvents(viewModel.events) {
         onDismiss()
     }
 

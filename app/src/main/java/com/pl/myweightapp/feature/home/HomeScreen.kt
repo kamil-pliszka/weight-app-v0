@@ -1,8 +1,6 @@
 package com.pl.myweightapp.feature.home
 
 import android.content.res.Configuration
-import android.util.Log
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -13,9 +11,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.pl.myweightapp.R
-import com.pl.myweightapp.core.presentation.util.ObserveAsEvents
-
-private const val TAG = "HomeScreen"
+import com.pl.myweightapp.core.ui.UiEventConsumer
 
 @Preview(name = "processing")
 @Composable
@@ -36,18 +32,10 @@ fun HomeScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    val messageErrorPrefix = stringResource(R.string.error_msg_prefix)
-    ObserveAsEvents(viewModel.events) { event ->
-        Log.d(TAG, "got event: $event")
-        when (event) {
-            is UiEvent.Error -> snackbarHostState.showSnackbar(
-                messageErrorPrefix + event.message,
-                duration = SnackbarDuration.Long
-            )
-
-            is UiEvent.Info -> snackbarHostState.showSnackbar(event.message)
-        }
-    }
+    UiEventConsumer(
+        events = viewModel.events,
+        snackbarHostState = snackbarHostState
+    )
 
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE

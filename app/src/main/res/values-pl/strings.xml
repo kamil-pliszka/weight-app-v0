@@ -9,7 +9,7 @@
     <string name="weight_unit_lb">lb</string>
     <string name="successfully_saved">Pomyślnie zapisano</string>
     <string name="successfully_deleted">Usunięto</string>
-    <string name="error_msg_prefix">Błąd podczas przetwarzania: </string>
+    <string name="error_msg_prefix">Błąd podczas przetwarzania: %1$s</string>
     <string name="period_2w">2W</string>
     <string name="period_1m">1M</string>
     <string name="period_2m">2M</string>
@@ -91,4 +91,7 @@
     <string name="settings_delete_all_error">Nie udało się usunąć danych: %1$s</string>
     <string name="settings_lang_error">Zapis nie powiodł się: %1$s</string>
     <string name="settings_dynamic_chart">Dynamiczny wykres</string>
+    <string name="profile_incorrect_age">Nieprawidłowy wiek</string>
+    <string name="profile_incorrect_height">Nieprawidłowy wzrost</string>
+    <string name="profile_incorrect_weight">Nieprawidłowa waga</string>
 </resources>

@@ -1,6 +1,5 @@
 package com.pl.myweightapp.feature.settings
 
-import android.app.Application
 import android.content.Context
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -8,31 +7,32 @@ import android.util.Log
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pl.myweightapp.R
 import com.pl.myweightapp.app.di.AppModule
 import com.pl.myweightapp.core.Constants.PROFILE_PHOTO_FILENAME
 import com.pl.myweightapp.core.domain.WeightUnit
+import com.pl.myweightapp.core.presentation.DefaultUiEventOwner
+import com.pl.myweightapp.core.presentation.UiEventOwner
+import com.pl.myweightapp.core.presentation.launchSafely
+import com.pl.myweightapp.core.presentation.sendInfo
 import com.pl.myweightapp.core.util.kgToLbs
 import com.pl.myweightapp.core.util.lbsToKg
 import com.pl.myweightapp.data.local.Gender
 import com.pl.myweightapp.data.local.HeightUnit
 import com.pl.myweightapp.data.local.UserProfileEntity
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.math.BigDecimal
-import kotlin.coroutines.cancellation.CancellationException
 
 
 @Immutable
@@ -56,7 +56,7 @@ data class ProfileUiState(
 //    val movingAverage1: Int? = null,
 //    val movingAverage2: Int? = null,
 //    val lang: String? = null,
-    )
+)
 
 sealed interface ProfileAction {
     data class NameChanged(val value: String) : ProfileAction
@@ -78,24 +78,17 @@ sealed interface ProfileAction {
     object ToggleGender : ProfileAction
 }
 
-sealed interface ProfileEvent {
-    data class Error(val message: String) : ProfileEvent
-    data class Saved(val message: String) : ProfileEvent
-}
-
-class ProfileViewModel(application: Application) : AndroidViewModel(application) {
+class ProfileViewModel : ViewModel(), UiEventOwner by DefaultUiEventOwner() {
     companion object {
         private const val TAG = "ProfileVM"
     }
 
     private val _state = MutableStateFlow(ProfileUiState())
     val state = _state.asStateFlow()
-    private val _events = Channel<ProfileEvent>(Channel.BUFFERED)
-    val events = _events.receiveAsFlow()
 
     init {
         observeProfile()
-        val context = getApplication<Application>()
+        val context = AppModule.provideContext()
         (context.filesDir.listFiles() ?: emptyArray()).forEach { file ->
             Log.d(
                 "FILES",
@@ -110,6 +103,17 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    private suspend inline fun <T> withSaving(
+        crossinline block: suspend () -> T
+    ): T {
+        return try {
+            _state.update { it.copy(isSaving = true) }
+            block()
+        } finally {
+            _state.update { it.copy(isSaving = false) }
+        }
+    }
+
     private fun observeProfile() {
         AppModule.provideUserProfileRepository().profile
             .onEach { profile ->
@@ -119,7 +123,7 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
                     File(it).exists()
                 }.also {
                     if (it == null && profile.photoPath != null) {
-                        Log.d(TAG,"Photo file not found: ${profile.photoPath}")
+                        Log.d(TAG, "Photo file not found: ${profile.photoPath}")
                     }
                 }
                 if (_state.value.photoPath != null && validPath == null) {
@@ -163,7 +167,7 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun onAction(action: ProfileAction) {
-        Log.d(TAG,"Action -> $action")
+        Log.d(TAG, "Action -> $action")
         when (action) {
             is ProfileAction.NameChanged -> {
                 update { copy(name = action.value) }
@@ -199,7 +203,7 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
             }
 
             is ProfileAction.PhotoPicked -> {
-                val savedPath = saveUriToCache(getApplication(), action.uri)
+                val savedPath = saveUriToCache(AppModule.provideContext(), action.uri)
                 //_state.update { it.copy(photoPath = savedPath) }
                 //deleteOldPhotoIfExists(state.value.photoPath)
                 update { copy(tmpPhotoPath = savedPath) }
@@ -215,9 +219,10 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
             }
 
             ProfileAction.ToggleWeightUnit -> {
-                val newWeightUnit = if (state.value.weightUnit == WeightUnit.KG) WeightUnit.LB else WeightUnit.KG
+                val newWeightUnit =
+                    if (state.value.weightUnit == WeightUnit.KG) WeightUnit.LB else WeightUnit.KG
                 onWeightUnitChange(newWeightUnit)
-                update { copy(weightUnit =  newWeightUnit) }
+                update { copy(weightUnit = newWeightUnit) }
             }
 
             ProfileAction.ToggleHeightUnit -> {
@@ -248,41 +253,41 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
     private fun onWeightUnitChange(newWeightUnit: WeightUnit) {
         if (state.value.weightUnit == newWeightUnit) return
         val weight = state.value.targetWeight.toBigDecimalOrNull() ?: return
-        Log.d(TAG,"onWeightUnitChange: $newWeightUnit, weight: $weight")
-        val newWeightValue = when(newWeightUnit) {
+        Log.d(TAG, "onWeightUnitChange: $newWeightUnit, weight: $weight")
+        val newWeightValue = when (newWeightUnit) {
             WeightUnit.KG -> weight.toFloat().lbsToKg()
             WeightUnit.LB -> weight.toFloat().kgToLbs()
         }
         val newWeightStr = "%.1f".format(newWeightValue).replace(".0", "")
-        Log.d(TAG,"newWeightStr: $newWeightStr")
+        Log.d(TAG, "newWeightStr: $newWeightStr")
         update { copy(targetWeight = newWeightStr) }
     }
 
-    private fun save() {
+    private fun save() = launchSafely {
         val s = state.value
         val age = s.age.toIntOrNull()
         val height = s.height.toIntOrNull()
         val weight = s.targetWeight.toBigDecimalOrNull()
         if (age != null && age !in 5..120) {
-            sendError("Nieprawidłowy wiek")
-            return
+            sendInfo(R.string.profile_incorrect_age)
+            return@launchSafely
         }
-        if (height != null && height !in 50..250) {
-            sendError("Nieprawidłowy wzrost")
-            return
+        if (height != null && height !in 50..500) {
+            sendInfo(R.string.profile_incorrect_height)
+            return@launchSafely
         }
         if (weight != null && weight <= BigDecimal.ZERO) {
-            sendError("Nieprawidłowa waga")
-            return
+            sendInfo(R.string.profile_incorrect_weight)
+            return@launchSafely
         }
 
         val finalPhoto = if (s.tmpPhotoPath != null) {
-            moveTmpToFinal(getApplication(), from = s.tmpPhotoPath, to = PROFILE_PHOTO_FILENAME)
+            moveTmpToFinal(AppModule.provideContext(), from = s.tmpPhotoPath, to = PROFILE_PHOTO_FILENAME)
         } else {
             s.photoPath
         }
         //_state.update { it.copy(photoPath = finalPhoto, tmpPhotoPath = null) }
-        Log.d(TAG,"Final photo: $finalPhoto")
+        Log.d(TAG, "Final photo: $finalPhoto")
         val entity = UserProfileEntity(
             id = 0,
             name = s.name,
@@ -299,34 +304,12 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
             //lang = s.lang
         )
 
-        viewModelScope.launch {
-            _state.update { it.copy(isSaving = true) }
-            try {
-                AppModule.provideUserProfileRepository().save(entity)
-                _state.update {
-                    it.copy(isSaving = false, isDirty = false)
-                }
-                sendEvent(ProfileEvent.Saved((getApplication() as Context).getString(R.string.profile_saved)))
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                sendError("Błąd zapisu profilu: ${e.message}")
-                _state.update {
-                    it.copy(isSaving = false)
-                }
+        withSaving {
+            AppModule.provideUserProfileRepository().save(entity)
+            _state.update {
+                it.copy(isDirty = false)
             }
-        }
-    }
-
-    private fun sendError(msg: String) {
-        viewModelScope.launch {
-            _events.send(ProfileEvent.Error(msg))
-        }
-    }
-
-    private fun sendEvent(event: ProfileEvent) {
-        viewModelScope.launch {
-            _events.send(event)
+            sendInfo(R.string.profile_saved)
         }
     }
 
@@ -368,8 +351,11 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
         val finalFile = File(context.filesDir, to)
         val tmpFile = File(from)
         tmpFile.copyTo(finalFile, overwrite = true)
-        Log.d(TAG,"Copied tmp file to: ${finalFile.absolutePath}, file size = ${finalFile.length()}")
-        Log.d(TAG,"Delete tmp file: ${tmpFile.absolutePath}")
+        Log.d(
+            TAG,
+            "Copied tmp file to: ${finalFile.absolutePath}, file size = ${finalFile.length()}"
+        )
+        Log.d(TAG, "Delete tmp file: ${tmpFile.absolutePath}")
         return finalFile.absolutePath
     }
 }
