@@ -26,13 +26,18 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.dialog
+import androidx.navigation.navArgument
+import com.pl.myweightapp.feature.addedit.AddMeasureDialog
+import com.pl.myweightapp.feature.addedit.EditMeasureDialog
 import com.pl.myweightapp.feature.history.HistoryScreen
 import com.pl.myweightapp.feature.home.HomeScreen
 import com.pl.myweightapp.feature.settings.SettingsScreen
@@ -41,6 +46,8 @@ sealed class Screen(val route: String) {
     object HomeScreen : Screen("home")
     object HistoryScreen : Screen("history")
     object SettingsScreen : Screen("settings")
+    object Add : Screen("add")
+    object Edit : Screen("edit")
 }
 
 @Composable
@@ -59,7 +66,31 @@ fun Navigation(
         composable(route = Screen.HistoryScreen.route) {
             HistoryScreen(
                 modifier = modifier,
-                snackbarHostState = snackbarHostState
+                snackbarHostState = snackbarHostState,
+                navController = navController,
+            )
+        }
+        dialog(
+            route = Screen.Edit.route + "/{itemId}",
+            arguments = listOf(
+                navArgument("itemId") { type = NavType.LongType }
+            )
+        ) {
+            EditMeasureDialog(
+                snackbarHostState = snackbarHostState,
+                onDismiss = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        dialog(
+            route = Screen.Add.route,
+        ) {
+            AddMeasureDialog(
+                onDismiss = {
+                    navController.popBackStack()
+                },
+                snackbarHostState = snackbarHostState,
             )
         }
         composable(route = Screen.SettingsScreen.route) {
@@ -75,7 +106,7 @@ fun Navigation(
 fun AppBottomNavigationBar(
     modifier: Modifier = Modifier,
     navController: NavController,
-    viewModel: NavigationViewModel = viewModel(),
+    viewModel: NavigationViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val items: List<BottomNavItem> = state
@@ -152,7 +183,7 @@ fun AppBottomNavigationBar(
 fun AppNavigationRail(
     modifier: Modifier = Modifier,
     navController: NavController,
-    viewModel: NavigationViewModel = viewModel(),
+    viewModel: NavigationViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val items: List<BottomNavItem> = state

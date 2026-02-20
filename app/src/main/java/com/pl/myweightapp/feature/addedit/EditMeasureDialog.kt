@@ -20,14 +20,13 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.pl.myweightapp.R
 import com.pl.myweightapp.core.presentation.util.observeAsEvents
 import com.pl.myweightapp.core.ui.ConfirmationDialog
@@ -37,13 +36,13 @@ import com.pl.myweightapp.core.util.toDateString
 @Composable
 fun EditMeasureDialog(
     modifier: Modifier = Modifier,
-    itemId: Long,
     onDismiss: () -> Unit,
     snackbarHostState: SnackbarHostState,
-    viewModel: EditMeasureViewModel = viewModel(key = "edit-$itemId") {
-        EditMeasureViewModel(itemId)
-    }
+//    viewModel: EditMeasureViewModel = viewModel(key = "edit-$itemId") {
+//        EditMeasureViewModel(itemId)
+//    }
     //viewModel: EditMeasureViewModel = viewModel()
+    viewModel: EditMeasureViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -54,7 +53,7 @@ fun EditMeasureDialog(
                     .fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator()
+                //CircularProgressIndicator()
             }
         }
 
@@ -130,14 +129,14 @@ fun EditMeasureDialog(
             }
         }
 
-        EditMeasureUiState.Deleted -> {
+        /*EditMeasureUiState.Deleted -> {
             val message = stringResource(R.string.successfully_deleted)
             val savedState = state
             LaunchedEffect(savedState) {
                 snackbarHostState.showSnackbar(message)
                 onDismiss() // zamykamy dialog
             }
-        }
+        }*/
 
         /*
         EditMeasureUiState.Saved -> {

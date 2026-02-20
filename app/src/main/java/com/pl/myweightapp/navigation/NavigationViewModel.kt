@@ -1,20 +1,21 @@
 package com.pl.myweightapp.navigation
 
-import android.app.Application
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pl.myweightapp.R
-import com.pl.myweightapp.app.di.AppModule
+import com.pl.myweightapp.data.repository.NavigationBadgeRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 data class BottomNavItem(
     val nameResId: Int,
@@ -30,8 +31,10 @@ enum class BadgeType {
     SETTINGS
 }
 
-class NavigationViewModel(application: Application) : AndroidViewModel(application) {
-    private val navBadgeRepo = AppModule.provideNavBadgeRepository()
+@HiltViewModel
+class NavigationViewModel @Inject constructor(
+    private val navBadgeRepo: NavigationBadgeRepository
+) : ViewModel() {
 //    val badges = navNadgeRepo
 //        .observeBadges()
 //        .stateIn(

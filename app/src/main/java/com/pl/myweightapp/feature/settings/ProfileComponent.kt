@@ -46,8 +46,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.pl.myweightapp.R
 import com.pl.myweightapp.core.ui.UiEventConsumer
 import com.pl.myweightapp.data.local.Gender
@@ -59,7 +59,7 @@ private const val TAG = "ProfileComponent"
 fun ProfileComponent(
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState,
-    viewModel: ProfileViewModel = viewModel()
+    viewModel: ProfileViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 

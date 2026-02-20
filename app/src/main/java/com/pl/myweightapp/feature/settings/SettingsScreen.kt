@@ -38,8 +38,8 @@ import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.pl.myweightapp.R
 import com.pl.myweightapp.core.ui.ConfirmationDialog
 import com.pl.myweightapp.core.ui.UiEventConsumer
@@ -50,7 +50,7 @@ private const val TAG = "SettingsScreen"
 fun SettingsScreen(
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState,
-    viewModel: SettingsViewModel = viewModel(),
+    viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 

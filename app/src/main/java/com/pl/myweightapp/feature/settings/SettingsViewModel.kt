@@ -1,12 +1,12 @@
 package com.pl.myweightapp.feature.settings
 
+import android.content.Context
 import android.net.Uri
 import android.util.Log
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pl.myweightapp.R
-import com.pl.myweightapp.app.di.AppModule
 import com.pl.myweightapp.core.Constants
 import com.pl.myweightapp.core.presentation.DefaultUiEventOwner
 import com.pl.myweightapp.core.presentation.UiEventOwner
@@ -16,6 +16,11 @@ import com.pl.myweightapp.data.csv.CsvParseException
 import com.pl.myweightapp.data.csv.exportWeightCsv
 import com.pl.myweightapp.data.csv.getFileNameFromUri
 import com.pl.myweightapp.data.csv.importWeightCsv
+import com.pl.myweightapp.data.preferences.AppSettingsManager
+import com.pl.myweightapp.data.repository.UserProfileRepository
+import com.pl.myweightapp.data.repository.WeightMeasureRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,6 +30,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import javax.inject.Inject
 
 @Immutable
 data class UiState(
@@ -50,14 +56,20 @@ sealed interface Action {
     data class OnChangeUseEmbeddedChart(val embedded: Boolean) : Action
 }
 
-class SettingsViewModel : ViewModel(), UiEventOwner by DefaultUiEventOwner() {
+@HiltViewModel
+class SettingsViewModel @Inject constructor(
+    private val appSettingsManager: AppSettingsManager,
+    private val userProfileRepository: UserProfileRepository,
+    private val weightMeasureRepository: WeightMeasureRepository,
+    @param:ApplicationContext private val context: Context,
+) : ViewModel(), UiEventOwner by DefaultUiEventOwner() {
     companion object {
         private const val TAG = "SettingsVM"
     }
 
     private val _state = MutableStateFlow(UiState())
     val state = _state.asStateFlow()
-    private val appSettingsManager = AppModule.provideAppSettingsManager()
+
 
     init {
         observeSettings()
@@ -157,11 +169,10 @@ class SettingsViewModel : ViewModel(), UiEventOwner by DefaultUiEventOwner() {
         Log.d(TAG, "CSV import uri: $uri")
         launchSafely {
             withCsvProcessing {
-                val context = AppModule.provideContext()
                 val mime = context.contentResolver.getType(uri)
                 Log.d(TAG, "mime: $mime")
                 try {
-                    val entriesCount = importWeightCsv(context, uri) { progress ->
+                    val entriesCount = importWeightCsv(weightMeasureRepository, context, uri) { progress ->
                         _state.update { it.copy(csvProgress = progress) }
                     }
                     sendInfo(R.string.settings_csv_import_success, entriesCount)
@@ -182,13 +193,13 @@ class SettingsViewModel : ViewModel(), UiEventOwner by DefaultUiEventOwner() {
         Log.d(TAG, "CSV export uri: $uri")
         launchSafely {
             withCsvProcessing {
-                val context = AppModule.provideContext()
                 val mime = context.contentResolver.getType(uri)
                 val filename = getFileNameFromUri(context, uri)
                 Log.d(TAG, "mime: $mime, filename: $filename")
-                val entriesCount = exportWeightCsv(context, uri) { progress ->
-                    _state.update { it.copy(csvProgress = progress) }
-                }
+                val entriesCount =
+                    exportWeightCsv(weightMeasureRepository, context, uri) { progress ->
+                        _state.update { it.copy(csvProgress = progress) }
+                    }
                 sendInfo(
                     R.string.settings_csv_export_success,
                     entriesCount,
@@ -202,11 +213,11 @@ class SettingsViewModel : ViewModel(), UiEventOwner by DefaultUiEventOwner() {
         launchSafely {
             withLoading {
                 //usuniecie pomiarów
-                AppModule.provideWeightMeasureRepository().deleteAll()
+                weightMeasureRepository.deleteAll()
                 //usunięcie profilu
-                AppModule.provideUserProfileRepository().deleteAll()
+                userProfileRepository.deleteAll()
                 //usunięcie ustawień
-                AppModule.provideAppSettingsManager().deleteAll()
+                appSettingsManager.deleteAll()
                 deleteAppFiles()
                 sendInfo(R.string.settings_delete_all_success)
             }
@@ -215,7 +226,6 @@ class SettingsViewModel : ViewModel(), UiEventOwner by DefaultUiEventOwner() {
 
     private suspend fun deleteAppFiles() = withContext(Dispatchers.IO) {
         //usunięcie wygenerowanego wykresu
-        val context = AppModule.provideContext()
         val fileChart = File(context.filesDir, Constants.WEIGHT_CHART_FILENAME)
         if (fileChart.exists()) {
             Log.d(TAG, "Delete ${Constants.WEIGHT_CHART_FILENAME}")

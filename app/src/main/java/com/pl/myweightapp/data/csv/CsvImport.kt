@@ -3,10 +3,10 @@ package com.pl.myweightapp.data.csv
 import android.content.Context
 import android.net.Uri
 import android.util.Log
-import com.pl.myweightapp.app.di.AppModule
 import com.pl.myweightapp.core.domain.WeightUnit
 import com.pl.myweightapp.core.util.toLocalDate
 import com.pl.myweightapp.data.local.WeightMeasureEntity
+import com.pl.myweightapp.data.repository.WeightMeasureRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -19,13 +19,13 @@ private fun WeightUnitCsv.toEntityWeightUnit(): WeightUnit {
 
 private const val TAG = "CsvImport"
 suspend fun importWeightCsv(
+    repo: WeightMeasureRepository,
     context: Context,
     uri: Uri,
     onProgressChange: (Float) -> Unit
 ): Int = withContext(Dispatchers.IO) {
     val entriesCsv = parseWeightCsv(context, uri)
     Log.d(TAG,"entriesCsv : ${entriesCsv.size}")
-    val repo = AppModule.provideWeightMeasureRepository()
     val historyEntities = repo.findWeightMeasureHistory()
     Log.d(TAG,"history entities : ${historyEntities.size}")
     val existingEntitiesByDate = historyEntities
@@ -61,7 +61,7 @@ suspend fun importWeightCsv(
         onProgressChange((idx + 1).toFloat() / entriesCsv.size)
         //_state.update { it.copy(csvProgress = (idx + 1).toFloat() / entriesCsv.size) }
     }
-    repo.import(AppModule.provideMyDatabase(), toInsert, toUpdate)
+    repo.import(toInsert, toUpdate)
     Log.d(TAG,"Imported")
     entriesCsv.size //return
 }

@@ -10,7 +10,6 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pl.myweightapp.R
-import com.pl.myweightapp.app.di.AppModule
 import com.pl.myweightapp.core.Constants.PROFILE_PHOTO_FILENAME
 import com.pl.myweightapp.core.domain.WeightUnit
 import com.pl.myweightapp.core.presentation.DefaultUiEventOwner
@@ -22,6 +21,9 @@ import com.pl.myweightapp.core.util.lbsToKg
 import com.pl.myweightapp.data.local.Gender
 import com.pl.myweightapp.data.local.HeightUnit
 import com.pl.myweightapp.data.local.UserProfileEntity
+import com.pl.myweightapp.data.repository.UserProfileRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -33,6 +35,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.math.BigDecimal
+import javax.inject.Inject
 
 
 @Immutable
@@ -78,7 +81,11 @@ sealed interface ProfileAction {
     object ToggleGender : ProfileAction
 }
 
-class ProfileViewModel : ViewModel(), UiEventOwner by DefaultUiEventOwner() {
+@HiltViewModel
+class ProfileViewModel @Inject constructor(
+    private val repository: UserProfileRepository,
+    @param:ApplicationContext private val context: Context,
+): ViewModel(), UiEventOwner by DefaultUiEventOwner() {
     companion object {
         private const val TAG = "ProfileVM"
     }
@@ -88,7 +95,6 @@ class ProfileViewModel : ViewModel(), UiEventOwner by DefaultUiEventOwner() {
 
     init {
         observeProfile()
-        val context = AppModule.provideContext()
         (context.filesDir.listFiles() ?: emptyArray()).forEach { file ->
             Log.d(
                 "FILES",
@@ -115,7 +121,7 @@ class ProfileViewModel : ViewModel(), UiEventOwner by DefaultUiEventOwner() {
     }
 
     private fun observeProfile() {
-        AppModule.provideUserProfileRepository().profile
+        repository.profile
             .onEach { profile ->
                 _state.update { it.copy(isLoading = false) }
                 if (profile == null) return@onEach
@@ -203,7 +209,7 @@ class ProfileViewModel : ViewModel(), UiEventOwner by DefaultUiEventOwner() {
             }
 
             is ProfileAction.PhotoPicked -> {
-                val savedPath = saveUriToCache(AppModule.provideContext(), action.uri)
+                val savedPath = saveUriToCache(context, action.uri)
                 //_state.update { it.copy(photoPath = savedPath) }
                 //deleteOldPhotoIfExists(state.value.photoPath)
                 update { copy(tmpPhotoPath = savedPath) }
@@ -282,7 +288,7 @@ class ProfileViewModel : ViewModel(), UiEventOwner by DefaultUiEventOwner() {
         }
 
         val finalPhoto = if (s.tmpPhotoPath != null) {
-            moveTmpToFinal(AppModule.provideContext(), from = s.tmpPhotoPath, to = PROFILE_PHOTO_FILENAME)
+            moveTmpToFinal(context, from = s.tmpPhotoPath, to = PROFILE_PHOTO_FILENAME)
         } else {
             s.photoPath
         }
@@ -305,7 +311,7 @@ class ProfileViewModel : ViewModel(), UiEventOwner by DefaultUiEventOwner() {
         )
 
         withSaving {
-            AppModule.provideUserProfileRepository().save(entity)
+            repository.save(entity)
             _state.update {
                 it.copy(isDirty = false)
             }

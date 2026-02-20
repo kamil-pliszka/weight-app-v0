@@ -22,12 +22,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.pl.myweightapp.R
 import com.pl.myweightapp.core.ui.ConfirmationDialog
 import com.pl.myweightapp.core.ui.UiEventConsumer
-import com.pl.myweightapp.feature.addedit.EditMeasureDialog
 import kotlinx.coroutines.launch
 
 private const val TAG = "HistoryScreen"
@@ -35,7 +35,8 @@ private const val TAG = "HistoryScreen"
 fun HistoryScreen(
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState,
-    viewModel: HistoryViewModel = viewModel(),
+    navController: NavController,
+    viewModel: HistoryViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -60,7 +61,7 @@ fun HistoryScreen(
 
         PullToRefreshBox(
             isRefreshing = state.isRefreshing,
-            onRefresh = { viewModel.onAction(HistoryAction.OnRefreshAction) }
+            onRefresh = { viewModel.onAction(HistoryAction.OnRefreshAction, navController) }
         ) {
             LazyColumn(
                 modifier = modifier
@@ -81,7 +82,7 @@ fun HistoryScreen(
                                             viewModel.onAction(
                                                 HistoryAction.OnItemDeleteAction(
                                                     itemUi
-                                                )
+                                                ), navController
                                             )
                                         }
                                     }
@@ -89,7 +90,7 @@ fun HistoryScreen(
                             },
                         itemUi = itemUi,
                         onClick = {
-                            viewModel.onAction(HistoryAction.OnItemEditAction(itemUi))
+                            viewModel.onAction(HistoryAction.OnItemEditAction(itemUi), navController)
                         }
                     )
                     HorizontalDivider()
@@ -98,22 +99,22 @@ fun HistoryScreen(
         }
     }
 
-    //val scope = rememberCoroutineScope()
-    state.editingItemId?.let { itemId ->
-        //Log.d(TAG,"composable state.editingItemId is set")
-//        val editVm: EditMeasureViewModel = viewModel(key = "edit-$itemId") {
-//            EditMeasureViewModel(itemId)
-//        }
-        EditMeasureDialog(
-            modifier = modifier,
-            itemId = itemId,
-            onDismiss = {
-                viewModel.onAction(HistoryAction.OnCloseEditAction)
-            },
-            snackbarHostState = snackbarHostState,
-            //viewModel = editVm
-        )
-    }
+
+//    state.editingItemId?.let { itemId ->
+//        //Log.d(TAG,"composable state.editingItemId is set")
+//        val editVm: EditMeasureViewModel = viewModel(
+//            key = "edit-$itemId",
+//            factory = EditMeasureViewModelFactory(itemId, viewModel.repository)
+//        )
+//        EditMeasureDialog(
+//            modifier = modifier,
+//            onDismiss = {
+//                viewModel.onAction(HistoryAction.OnCloseEditAction, navController)
+//            },
+//            snackbarHostState = snackbarHostState,
+//            viewModel = editVm
+//        )
+//    }
 
     state.deletingItem?.let { itemUi ->
         ConfirmationDialog(
@@ -123,12 +124,12 @@ fun HistoryScreen(
                 itemUi.date.formatted
             ),
             onConfirm = {
-                viewModel.onAction(HistoryAction.OnConfirmDeleteAction(itemUi.id))
+                viewModel.onAction(HistoryAction.OnConfirmDeleteAction(itemUi.id), navController)
             },
             confirmText = stringResource(R.string.history_delete_button),
             confirmColor = MaterialTheme.colorScheme.error,
             onCancel = {
-                viewModel.onAction(HistoryAction.OnCancelDeleteAction)
+                viewModel.onAction(HistoryAction.OnCancelDeleteAction, navController)
             },
         )
     }

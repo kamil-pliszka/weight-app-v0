@@ -3,7 +3,9 @@ package com.pl.myweightapp.data.local
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 import java.math.BigDecimal
@@ -23,8 +25,23 @@ interface WeightMeasureDao {
     @Update
     suspend fun update(entity: WeightMeasureEntity)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun saveAll(entities: List<WeightMeasureEntity>)
+
+    @Update
+    suspend fun updateAll(entities: List<WeightMeasureEntity>)
+
     @Delete
     suspend fun delete(measureEntity: WeightMeasureEntity)
+
+    @Transaction
+    suspend fun importAll(
+        toInsert: List<WeightMeasureEntity>,
+        toUpdate: List<WeightMeasureEntity>
+    ) {
+        saveAll(toInsert)
+        updateAll(toUpdate)
+    }
 
     @Query("DELETE FROM ${WeightMeasureEntity.TABLE} WHERE id = :id")
     suspend fun deleteById(id: Long) : Int

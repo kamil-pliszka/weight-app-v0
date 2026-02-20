@@ -4,7 +4,6 @@ import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -25,17 +24,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.compose.rememberNavController
-import com.pl.myweightapp.core.ui.UiEventConsumer
-import com.pl.myweightapp.feature.addedit.AddMeasureDialog
-import com.pl.myweightapp.feature.addedit.AddMeasureViewModel
 import com.pl.myweightapp.navigation.AppBottomNavigationBar
 import com.pl.myweightapp.navigation.AppNavigationRail
 import com.pl.myweightapp.navigation.Navigation
 import com.pl.myweightapp.navigation.NavigationViewModel
+import com.pl.myweightapp.navigation.Screen
 import com.pl.myweightapp.ui.theme.MyWeightAppTheme
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,13 +44,13 @@ class MainActivity : AppCompatActivity() {
             //val scope = rememberCoroutineScope()
             val navController = rememberNavController()
 
-            val vmAddMeasure : AddMeasureViewModel = viewModel()
-            UiEventConsumer(
-                events = vmAddMeasure.events,
-                snackbarHostState = snackBarState
-            )
+//            val vmAddMeasure : AddMeasureViewModel = hiltViewModel()
+//            UiEventConsumer(
+//                events = vmAddMeasure.events,
+//                snackbarHostState = snackBarState
+//            )
             val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
-            val navigationVM: NavigationViewModel by viewModels()
+            val navigationVM: NavigationViewModel = hiltViewModel() //by viewModels()
 
             MyWeightAppTheme {
                 Scaffold(
@@ -64,12 +63,8 @@ class MainActivity : AppCompatActivity() {
                     floatingActionButton = {
                         FloatingActionButton(
                             onClick = {
-//                                scope.launch {
-//                                    snackBarState.showSnackbar(
-//                                        message = "Clicked FAB"
-//                                    )
-//                                }
-                                vmAddMeasure.onShowDialogAction()
+                                //vmAddMeasure.onShowDialogAction()
+                                navController.navigate(Screen.Add.route)
                             },
                             modifier = if (isLandscape) Modifier.offset(x = 4.dp, y = 24.dp) else Modifier,
                             shape = CircleShape
@@ -111,8 +106,7 @@ class MainActivity : AppCompatActivity() {
                             snackbarHostState = snackBarState
                         )
                     }
-
-                    AddMeasureDialog()
+                    //AddMeasureDialog()
                 }
             }
         }

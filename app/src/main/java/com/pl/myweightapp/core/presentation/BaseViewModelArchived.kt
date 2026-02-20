@@ -11,6 +11,12 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
 
+
+/**
+ * Archived implementation.
+ * Replaced by UiEventOwner delegation + launchSafely extension.
+ * Kept temporarily for reference.
+ */
 abstract class BaseViewModel : ViewModel() {
     companion object {
         private const val TAG = "BaseVM"

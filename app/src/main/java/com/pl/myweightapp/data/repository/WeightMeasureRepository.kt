@@ -1,8 +1,6 @@
 package com.pl.myweightapp.data.repository
 
-import androidx.room.withTransaction
 import com.pl.myweightapp.core.domain.WeightUnit
-import com.pl.myweightapp.data.local.MyDatabase
 import com.pl.myweightapp.data.local.WeightMeasureDao
 import com.pl.myweightapp.data.local.WeightMeasureEntity
 import kotlinx.coroutines.Dispatchers
@@ -49,18 +47,10 @@ class WeightMeasureRepository(val weightMeasureDao: WeightMeasureDao) {
     }
 
     suspend fun import(
-        db: MyDatabase,
         toInsert: List<WeightMeasureEntity>,
         toUpdate: List<WeightMeasureEntity>
     ) = withContext(Dispatchers.IO) {
-        db.withTransaction {
-            toInsert.forEach {entity ->
-                weightMeasureDao.save(entity)
-            }
-            toUpdate.forEach {entity ->
-                weightMeasureDao.update(entity)
-            }
-        }
+        weightMeasureDao.importAll(toInsert, toUpdate)
     }
 
 

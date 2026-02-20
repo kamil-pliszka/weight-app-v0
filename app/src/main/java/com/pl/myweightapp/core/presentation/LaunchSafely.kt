@@ -18,7 +18,7 @@ inline fun <T> T.launchSafely(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            val tag = "launchSafely:${this@launchSafely::class.java.simpleName}"
+            val tag = this@launchSafely::class.java.simpleName
             Log.e(tag, e.message, e)
             sendError(
                 R.string.error_msg_prefix,

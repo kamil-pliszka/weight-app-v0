@@ -9,7 +9,6 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.pl.myweightapp.app.di.AppModule
 import com.pl.myweightapp.core.Constants
 import com.pl.myweightapp.core.domain.WeightUnit
 import com.pl.myweightapp.core.presentation.DefaultUiEventOwner
@@ -22,9 +21,14 @@ import com.pl.myweightapp.core.util.toInstant
 import com.pl.myweightapp.core.util.toLocalDate
 import com.pl.myweightapp.data.local.UserProfileEntity
 import com.pl.myweightapp.data.local.WeightMeasureEntity
+import com.pl.myweightapp.data.preferences.AppSettingsManager
+import com.pl.myweightapp.data.repository.UserProfileRepository
+import com.pl.myweightapp.data.repository.WeightMeasureRepository
 import com.pl.myweightapp.data.repository.sortWeightMeasureHistory
 import com.pl.myweightapp.feature.home.chart.Measurement
 import com.pl.myweightapp.feature.home.chart.generateChartBitmap
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,6 +42,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.math.BigDecimal
+import javax.inject.Inject
 
 @Immutable
 data class UiState(
@@ -68,18 +73,19 @@ sealed interface Action {
     data class OnChangeMovingAverages(val ma1: Int?, val ma2: Int?) : Action
 }
 
-class HomeViewModel : ViewModel(), UiEventOwner by DefaultUiEventOwner() {
+@HiltViewModel
+class HomeViewModel @Inject constructor(
+    weightRepo: WeightMeasureRepository,
+    profileRepo: UserProfileRepository,
+    private val appSettingsManager: AppSettingsManager,
+    @param:ApplicationContext private val context: Context,
+): ViewModel(), UiEventOwner by DefaultUiEventOwner() {
     companion object {
         private const val TAG = "HomeVM"
     }
 
     private val _state = MutableStateFlow(UiState())
     val state = _state.asStateFlow()
-    private val weightRepo = AppModule.provideWeightMeasureRepository()
-    private val profileRepo = AppModule.provideUserProfileRepository()
-
-    private val appSettingsManager = AppModule.provideAppSettingsManager()
-
     private suspend inline fun <T> withProcessing(
         crossinline block: suspend () -> T
     ): T {
@@ -221,7 +227,7 @@ class HomeViewModel : ViewModel(), UiEventOwner by DefaultUiEventOwner() {
                 )
                 if (measurements.isNotEmpty() && state.value.chartWidthPx > 0 && state.value.chartHeightPx > 0) {
                     val bitmap = generateChartBitmap(
-                        context = AppModule.provideContext(),
+                        context = context,
                         totalMeasurements = measurements,
                         startIdx = startIdx,
                         widthPx = state.value.chartWidthPx,
@@ -255,7 +261,7 @@ class HomeViewModel : ViewModel(), UiEventOwner by DefaultUiEventOwner() {
         launchSafely {
             Log.d(TAG, "Exporting chart")
             val file = saveBitmapToFileAsync(
-                AppModule.provideContext(),
+                context,
                 bitmap,
                 Constants.WEIGHT_CHART_FILENAME
             )
@@ -280,7 +286,6 @@ class HomeViewModel : ViewModel(), UiEventOwner by DefaultUiEventOwner() {
         launchSafely {
             withContext(Dispatchers.IO) {
                 Log.d(TAG, "tryToLoadFromFile")
-                val context = AppModule.provideContext()
                 val file = File(context.filesDir, Constants.WEIGHT_CHART_FILENAME)
                 val bitmap = loadBitmapFromFile(file)
                 if (bitmap != null) {

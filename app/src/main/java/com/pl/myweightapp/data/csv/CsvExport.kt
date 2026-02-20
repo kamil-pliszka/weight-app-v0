@@ -4,18 +4,18 @@ import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.util.Log
-import com.pl.myweightapp.app.di.AppModule
+import com.pl.myweightapp.data.repository.WeightMeasureRepository
 import com.pl.myweightapp.data.repository.sortWeightMeasureHistory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 private const val TAG = "CsvExport"
 suspend fun exportWeightCsv(
+    repo: WeightMeasureRepository,
     context: Context,
     uri: Uri,
     onProgressChange: (Float) -> Unit
 ): Int = withContext(Dispatchers.IO) {
-    val repo = AppModule.provideWeightMeasureRepository()
     val historyEntities = sortWeightMeasureHistory(repo.findWeightMeasureHistory())
     Log.d(TAG,"history entities : ${historyEntities.size}")
     context.contentResolver.openOutputStream(uri)?.use { output ->
