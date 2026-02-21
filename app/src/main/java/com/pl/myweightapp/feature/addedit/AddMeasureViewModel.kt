@@ -2,6 +2,7 @@ package com.pl.myweightapp.feature.addedit
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.pl.myweightapp.core.domain.WeightUnit
 import com.pl.myweightapp.core.presentation.DefaultUiEventOwner
 import com.pl.myweightapp.core.presentation.UiEventOwner
@@ -9,9 +10,12 @@ import com.pl.myweightapp.core.presentation.launchSafely
 import com.pl.myweightapp.core.util.toInstant
 import com.pl.myweightapp.data.repository.WeightMeasureRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.LocalDate
@@ -28,6 +32,15 @@ data class AddMeasureState(
     val choosenDate: LocalDate = LocalDate.now(),
 )
 
+sealed interface AddAction {
+    object OnShowDateDialogAction: AddAction
+    object OnDialogConfirmAction: AddAction
+    data class UpdateCurrentMeasure(val measure: BigDecimal) : AddAction
+    object OnCloseDateDialog: AddAction
+    data class UpdateChoosenDate(val date: LocalDate): AddAction
+    object OnDismissAction: AddAction
+}
+
 @HiltViewModel
 class AddMeasureViewModel @Inject constructor(
     private val repository: WeightMeasureRepository
@@ -37,6 +50,15 @@ class AddMeasureViewModel @Inject constructor(
     }
     private val _state = MutableStateFlow(AddMeasureState())
     val state = _state.asStateFlow()
+
+    private val _navEvents = MutableSharedFlow<AddEditMeasureEvent>(
+        extraBufferCapacity = 1
+    )
+    val navEvents = _navEvents.asSharedFlow()
+
+    private suspend fun sendCloseDialogEvent() {
+        _navEvents.emit(AddEditMeasureEvent.CloseDialog)
+    }
 
     init {
         Log.d(TAG,"init")
@@ -51,8 +73,23 @@ class AddMeasureViewModel @Inject constructor(
         }
     }
 
+    fun onAction(addAction: AddAction) {
+        when(addAction) {
+            AddAction.OnCloseDateDialog -> onCloseDateDialog()
+            AddAction.OnDialogConfirmAction -> onDialogConfirmAction()
+            AddAction.OnShowDateDialogAction -> onShowDateDialogAction()
+            is AddAction.UpdateChoosenDate -> updateChoosenDate(addAction.date)
+            is AddAction.UpdateCurrentMeasure -> updateCurrentMeasure(addAction.measure)
+            AddAction.OnDismissAction -> onDismissAction()
+        }
+    }
 
-    fun onDialogConfirmAction() {
+    private fun onDismissAction() {
+        viewModelScope.launch {
+            sendCloseDialogEvent()
+        }
+    }
+    private fun onDialogConfirmAction() {
         val currentMeasure = state.value.currentWeightMeasure
         val choosenDate = state.value.choosenDate
         val instantDate = if (choosenDate == LocalDate.now()) {
@@ -67,6 +104,7 @@ class AddMeasureViewModel @Inject constructor(
                 unit = WeightUnit.KG
             )
             //_state.update { it.copy(showDialog = false) }
+            sendCloseDialogEvent()
         }
     }
 
@@ -89,19 +127,19 @@ class AddMeasureViewModel @Inject constructor(
 //        _state.update { it.copy(showDialog = false) }
 //    }
 
-    fun onShowDateDialogAction() {
+    private fun onShowDateDialogAction() {
         _state.update { it.copy(showDateDialog = true) }
     }
 
-    fun onCloseDateDialog() {
+    private fun onCloseDateDialog() {
         _state.update { it.copy(showDateDialog = false) }
     }
 
-    fun updateChoosenDate(date: LocalDate) {
+    private fun updateChoosenDate(date: LocalDate) {
         _state.update { it.copy(choosenDate = date) }
     }
 
-    fun updateCurrentMeasure(newMeasure: BigDecimal) {
+    private fun updateCurrentMeasure(newMeasure: BigDecimal) {
         _state.update { it.copy(currentWeightMeasure = newMeasure) }
     }
 

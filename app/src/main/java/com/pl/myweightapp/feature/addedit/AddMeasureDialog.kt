@@ -11,26 +11,19 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SelectableDates
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.window.DialogProperties
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.pl.myweightapp.R
-import com.pl.myweightapp.core.ui.UiEventConsumer
 import com.pl.myweightapp.core.util.toDateString
 import com.pl.myweightapp.core.util.toMillis
 import java.time.LocalDate
@@ -38,18 +31,10 @@ import java.time.LocalDate
 
 @Composable
 fun AddMeasureDialog(
-    onDismiss: () -> Unit,
-    snackbarHostState: SnackbarHostState,
-    viewModel: AddMeasureViewModel = hiltViewModel()
+    state: AddMeasureState,
+    onAction: (AddAction) -> Unit,
+    //onDismiss: () -> Unit,
 ) {
-    val state by viewModel.state.collectAsStateWithLifecycle()
-    println("AddMeasureDialog: ${state}")
-
-    UiEventConsumer(
-        events = viewModel.events,
-        snackbarHostState = snackbarHostState
-    )
-
     if (state.isLoading) {
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -59,7 +44,7 @@ fun AddMeasureDialog(
         }
     } else {
         AlertDialog(
-            onDismissRequest = onDismiss,
+            onDismissRequest = { onAction(AddAction.OnDismissAction) },
             confirmButton = {
                 Row(
                     modifier = Modifier
@@ -67,7 +52,7 @@ fun AddMeasureDialog(
                     //.border(1.dp, Color.Cyan)
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    TextButton(onClick = onDismiss) {
+                    TextButton(onClick = { onAction(AddAction.OnDismissAction) }) {
                         //Text("ANULUJ")
                         Icon(
                             imageVector = Icons.Default.Close,
@@ -75,13 +60,10 @@ fun AddMeasureDialog(
                             contentDescription = stringResource(R.string.add_measure_cancel)
                         )
                     }
-                    TextButton(onClick = viewModel::onShowDateDialogAction) {
+                    TextButton(onClick = { onAction(AddAction.OnShowDateDialogAction) }) {
                         Text(state.choosenDate.toDateString())
                     }
-                    TextButton(onClick = {
-                        viewModel.onDialogConfirmAction()
-                        onDismiss()
-                    }) {
+                    TextButton(onClick = { onAction(AddAction.OnDialogConfirmAction) }) {
                         //Text("OK")
                         Icon(
                             imageVector = Icons.Default.Check,
@@ -101,7 +83,7 @@ fun AddMeasureDialog(
             text = {
                 WeightMeasureComponent(
                     initialMeasure = state.currentWeightMeasure,
-                    onMeasureChanged = viewModel::updateCurrentMeasure
+                    onMeasureChanged = { onAction(AddAction.UpdateCurrentMeasure(it)) }
                 )
             },
         )
@@ -122,12 +104,12 @@ fun AddMeasureDialog(
         )
         LocalDatePickerDialog(
             datePickerState = datePickerState,
-            onDismissRequest = { viewModel.onCloseDateDialog() },
+            onDismissRequest = { onAction(AddAction.OnCloseDateDialog) },
             onDatePicked = { newDate ->
                 newDate?.let {
-                    viewModel.updateChoosenDate(it)
+                    onAction(AddAction.UpdateChoosenDate(it))
                 }
-                viewModel.onCloseDateDialog()
+                onAction(AddAction.OnCloseDateDialog)
             },
         )
     }

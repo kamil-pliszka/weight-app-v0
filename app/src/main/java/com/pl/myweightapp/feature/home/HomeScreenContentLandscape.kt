@@ -51,9 +51,10 @@ fun HomeScreenContentLandscape(
     modifier: Modifier = Modifier,
     state: UiState,
     //onRefresh: () -> Unit,
-    onChangePeriod: (DisplayPeriod) -> Unit,
-    onChangeMovingAverages: (Int?, Int?) -> Unit,
-    onChangeChartDimensions: (Int, Int) -> Unit,
+    onAction: (Action) -> Unit,
+    //onChangePeriod: (DisplayPeriod) -> Unit,
+    //onChangeMovingAverages: (Int?, Int?) -> Unit,
+    //onChangeChartDimensions: (Int, Int) -> Unit,
 ) {
     Box(
         modifier = modifier
@@ -80,13 +81,17 @@ fun HomeScreenContentLandscape(
                     //onClickGenerate = onRefresh,
                     //onChangePeriod = onChangePeriod,
                     //onChangeMovingAverages = onChangeMovingAverages,
-                    onChangeChartDimensions = onChangeChartDimensions
+                    onChangeChartDimensions = { widthPx, heightPx ->
+                        onAction(Action.OnChangeChartDimensionsAction(widthPx, heightPx))
+                    }
                 )
                 Spacer(modifier = Modifier.width(8.dp))  // mała przerwa
                 LegendVertical(
                     state = state,
-                    onChangeMovingAverages = onChangeMovingAverages,
-                    onChangePeriod = onChangePeriod,
+                    onChangeMovingAverages = { ma1, ma2 ->
+                        onAction(Action.OnChangeMovingAverages(ma1, ma2))
+                    },
+                    onChangePeriod = { onAction(Action.OnChangePeriod(it)) },
                 )
             }
         }

@@ -11,34 +11,27 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavController
 import com.pl.myweightapp.R
 import com.pl.myweightapp.core.ui.ConfirmationDialog
-import com.pl.myweightapp.core.ui.UiEventConsumer
 import kotlinx.coroutines.launch
 
 private const val TAG = "HistoryScreen"
 @Composable
 fun HistoryScreen(
     modifier: Modifier = Modifier,
-    snackbarHostState: SnackbarHostState,
-    navController: NavController,
-    viewModel: HistoryViewModel = hiltViewModel(),
+    state: HistoryUiState,
+    onAction: (HistoryAction) -> Unit,
 ) {
-    val state by viewModel.state.collectAsStateWithLifecycle()
+    //val state by viewModel.state.collectAsStateWithLifecycle()
 
     if (state.isLoading) {
         Box(
@@ -61,7 +54,7 @@ fun HistoryScreen(
 
         PullToRefreshBox(
             isRefreshing = state.isRefreshing,
-            onRefresh = { viewModel.onAction(HistoryAction.OnRefreshAction, navController) }
+            onRefresh = { onAction(HistoryAction.OnRefreshAction) }
         ) {
             LazyColumn(
                 modifier = modifier
@@ -79,10 +72,10 @@ fun HistoryScreen(
                                     if (dragAmount > 40f) { // przesunięcie w prawo
                                         scope.launch {
                                             Log.d(TAG,"Invoke onDelete for ${itemUi.id} ..., dragAmount = $dragAmount")
-                                            viewModel.onAction(
+                                            onAction(
                                                 HistoryAction.OnItemDeleteAction(
                                                     itemUi
-                                                ), navController
+                                                )
                                             )
                                         }
                                     }
@@ -90,7 +83,7 @@ fun HistoryScreen(
                             },
                         itemUi = itemUi,
                         onClick = {
-                            viewModel.onAction(HistoryAction.OnItemEditAction(itemUi), navController)
+                            onAction(HistoryAction.OnItemEditAction(itemUi))
                         }
                     )
                     HorizontalDivider()
@@ -124,18 +117,13 @@ fun HistoryScreen(
                 itemUi.date.formatted
             ),
             onConfirm = {
-                viewModel.onAction(HistoryAction.OnConfirmDeleteAction(itemUi.id), navController)
+                onAction(HistoryAction.OnConfirmDeleteAction(itemUi.id))
             },
             confirmText = stringResource(R.string.history_delete_button),
             confirmColor = MaterialTheme.colorScheme.error,
             onCancel = {
-                viewModel.onAction(HistoryAction.OnCancelDeleteAction, navController)
+                onAction(HistoryAction.OnCancelDeleteAction)
             },
         )
     }
-
-    UiEventConsumer(
-        events = viewModel.events,
-        snackbarHostState = snackbarHostState
-    )
 }

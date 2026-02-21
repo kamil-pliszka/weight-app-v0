@@ -36,11 +36,20 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.dialog
 import androidx.navigation.navArgument
+import com.pl.myweightapp.core.presentation.util.observeAsEvents
+import com.pl.myweightapp.core.ui.UiEventConsumer
 import com.pl.myweightapp.feature.addedit.AddMeasureDialog
+import com.pl.myweightapp.feature.addedit.AddMeasureViewModel
 import com.pl.myweightapp.feature.addedit.EditMeasureDialog
+import com.pl.myweightapp.feature.addedit.EditMeasureViewModel
 import com.pl.myweightapp.feature.history.HistoryScreen
+import com.pl.myweightapp.feature.history.HistoryUiEvent
+import com.pl.myweightapp.feature.history.HistoryViewModel
 import com.pl.myweightapp.feature.home.HomeScreen
+import com.pl.myweightapp.feature.home.HomeViewModel
+import com.pl.myweightapp.feature.settings.ProfileViewModel
 import com.pl.myweightapp.feature.settings.SettingsScreen
+import com.pl.myweightapp.feature.settings.SettingsViewModel
 
 sealed class Screen(val route: String) {
     object HomeScreen : Screen("home")
@@ -58,16 +67,30 @@ fun Navigation(
 ) {
     NavHost(navController = navController, startDestination = Screen.HomeScreen.route) {
         composable(route = Screen.HomeScreen.route) {
+            val viewModel = hiltViewModel<HomeViewModel>()
+            UiEventConsumer(snackbarHostState, viewModel.events)
+            val state by viewModel.state.collectAsStateWithLifecycle()
             HomeScreen(
                 modifier = modifier,
-                snackbarHostState = snackbarHostState
+                state = state,
+                onAction = viewModel::onAction,
             )
         }
         composable(route = Screen.HistoryScreen.route) {
+            val viewModel = hiltViewModel<HistoryViewModel>()
+            UiEventConsumer(snackbarHostState, viewModel.events)
+            observeAsEvents(viewModel.navEvents) {event ->
+                when(event) {
+                    is HistoryUiEvent.NavToEditMeasure -> {
+                        navController.navigate("${Screen.Edit.route}/${event.id}")
+                    }
+                }
+            }
+            val state by viewModel.state.collectAsStateWithLifecycle()
             HistoryScreen(
                 modifier = modifier,
-                snackbarHostState = snackbarHostState,
-                navController = navController,
+                state = state,
+                onAction = viewModel::onAction,
             )
         }
         dialog(
@@ -76,27 +99,44 @@ fun Navigation(
                 navArgument("itemId") { type = NavType.LongType }
             )
         ) {
+            val viewModel = hiltViewModel<EditMeasureViewModel>()
+            UiEventConsumer(snackbarHostState, viewModel.events)
+            observeAsEvents(viewModel.navEvents) {
+                navController.popBackStack()
+            }
+            val state by viewModel.state.collectAsStateWithLifecycle()
             EditMeasureDialog(
-                snackbarHostState = snackbarHostState,
-                onDismiss = {
-                    navController.popBackStack()
-                }
+                state = state,
+                onAction = viewModel::onAction,
             )
         }
         dialog(
             route = Screen.Add.route,
         ) {
+            val viewModel = hiltViewModel<AddMeasureViewModel>()
+            UiEventConsumer(snackbarHostState, viewModel.events)
+            observeAsEvents(viewModel.navEvents) {
+                navController.popBackStack()
+            }
+            val state by viewModel.state.collectAsStateWithLifecycle()
             AddMeasureDialog(
-                onDismiss = {
-                    navController.popBackStack()
-                },
-                snackbarHostState = snackbarHostState,
+                state = state,
+                onAction = viewModel::onAction,
             )
         }
         composable(route = Screen.SettingsScreen.route) {
+            val viewModel = hiltViewModel<SettingsViewModel>()
+            UiEventConsumer(snackbarHostState, viewModel.events)
+            val state by viewModel.state.collectAsStateWithLifecycle()
+            val profileVM = hiltViewModel<ProfileViewModel>()
+            UiEventConsumer(snackbarHostState, profileVM.events)
+            val profileState by profileVM.state.collectAsStateWithLifecycle()
             SettingsScreen(
                 modifier = modifier,
-                snackbarHostState = snackbarHostState
+                state = state,
+                onAction = viewModel::onAction,
+                profileState = profileState,
+                profileOnAction = profileVM::onAction,
             )
         }
     }

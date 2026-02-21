@@ -28,8 +28,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 @Immutable
@@ -181,12 +179,6 @@ class SettingsViewModel @Inject constructor(
                 }
             }
         }
-    }
-
-    fun suggestedExportFileName(): String {
-        val formatter = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")
-        val dateStr = LocalDateTime.now().format(formatter)
-        return "MyWeight_$dateStr.csv"
     }
 
     private fun processCsvExport(uri: Uri) {

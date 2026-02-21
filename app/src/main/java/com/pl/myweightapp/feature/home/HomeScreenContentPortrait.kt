@@ -45,9 +45,10 @@ fun HomeScreenContentPortrait(
     modifier: Modifier = Modifier,
     state: UiState,
     //onRefresh: () -> Unit,
-    onChangePeriod: (DisplayPeriod) -> Unit,
-    onChangeMovingAverages: (Int?, Int?) -> Unit,
-    onChangeChartDimensions: (Int, Int) -> Unit,
+    onAction: (Action) -> Unit,
+//    onChangePeriod: (DisplayPeriod) -> Unit,
+//    onChangeMovingAverages: (Int?, Int?) -> Unit,
+//    onChangeChartDimensions: (Int, Int) -> Unit,
 ) {
     Box(
         modifier = modifier.fillMaxSize()
@@ -82,12 +83,16 @@ fun HomeScreenContentPortrait(
                         //.weight(1f),   // 👈 zajmuje całą pozostałą przestrzeń
                         state = state,
                         //onClickGenerate = onRefresh,
-                        onChangeChartDimensions = onChangeChartDimensions
+                        onChangeChartDimensions = { widthPx, heightPx ->
+                            onAction(Action.OnChangeChartDimensionsAction(widthPx, heightPx))
+                        }
                     )
                     BottomButtons(
                         state = state,
-                        onChangePeriod = onChangePeriod,
-                        onChangeMovingAverages = onChangeMovingAverages,
+                        onChangePeriod = { onAction(Action.OnChangePeriod(it)) },
+                        onChangeMovingAverages = { ma1, ma2 ->
+                            onAction(Action.OnChangeMovingAverages(ma1, ma2))
+                        },
                     )
                 }
                 LegendBottom(

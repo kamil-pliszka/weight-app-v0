@@ -1,42 +1,34 @@
 package com.pl.myweightapp.feature.home
 
 import android.content.res.Configuration
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.pl.myweightapp.R
-import com.pl.myweightapp.core.ui.UiEventConsumer
 
 @Preview(name = "processing")
 @Composable
-fun HomeScreenPreview() {
+fun HomeScreenPortraitPreview() {
     HomeScreenContentPortrait(
         state = UiState(isProcessing = true),
-        onChangePeriod = { },
-        onChangeMovingAverages = { _, _ -> },
-        onChangeChartDimensions = { _, _ -> },
+        onAction = {},
+//        onChangePeriod = { },
+//        onChangeMovingAverages = { _, _ -> },
+//        onChangeChartDimensions = { _, _ -> },
     )
 }
 
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
-    snackbarHostState: SnackbarHostState,
-    viewModel: HomeViewModel = hiltViewModel(),
+    state: UiState,
+    onAction: (Action) -> Unit,
+    //snackbarHostState: SnackbarHostState,
+    //viewModel: HomeViewModel = hiltViewModel(),
 ) {
-    val state by viewModel.state.collectAsStateWithLifecycle()
-
-    UiEventConsumer(
-        events = viewModel.events,
-        snackbarHostState = snackbarHostState
-    )
-
+    //val state by viewModel.state.collectAsStateWithLifecycle()
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     //Log.d(TAG, "isLandscape: $isLandscape")
@@ -45,25 +37,27 @@ fun HomeScreen(
         HomeScreenContentLandscape(
             modifier = modifier,
             state = state,
-            onChangePeriod = { viewModel.onAction(Action.OnChangePeriod(it)) },
-            onChangeMovingAverages = { ma1, ma2 ->
-                viewModel.onAction(Action.OnChangeMovingAverages(ma1, ma2))
-            },
-            onChangeChartDimensions = { widthPx, heightPx ->
-                viewModel.onAction(Action.OnChangeChartDimensionsAction(widthPx, heightPx))
-            }
+            onAction = onAction,
+//            onChangePeriod = { onAction(Action.OnChangePeriod(it)) },
+//            onChangeMovingAverages = { ma1, ma2 ->
+//                onAction(Action.OnChangeMovingAverages(ma1, ma2))
+//            },
+//            onChangeChartDimensions = { widthPx, heightPx ->
+//                onAction(Action.OnChangeChartDimensionsAction(widthPx, heightPx))
+//            }
         )
     } else {
         HomeScreenContentPortrait(
             modifier = modifier,
             state = state,
-            onChangePeriod = { viewModel.onAction(Action.OnChangePeriod(it)) },
-            onChangeMovingAverages = { ma1, ma2 ->
-                viewModel.onAction(Action.OnChangeMovingAverages(ma1, ma2))
-            },
-            onChangeChartDimensions = { widthPx, heightPx ->
-                viewModel.onAction(Action.OnChangeChartDimensionsAction(widthPx, heightPx))
-            }
+            onAction = onAction,
+//            onChangePeriod = { onAction(Action.OnChangePeriod(it)) },
+//            onChangeMovingAverages = { ma1, ma2 ->
+//                onAction(Action.OnChangeMovingAverages(ma1, ma2))
+//            },
+//            onChangeChartDimensions = { widthPx, heightPx ->
+//                onAction(Action.OnChangeChartDimensionsAction(widthPx, heightPx))
+//            }
         )
     }
 }

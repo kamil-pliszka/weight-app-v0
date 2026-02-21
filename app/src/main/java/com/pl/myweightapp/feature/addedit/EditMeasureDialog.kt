@@ -16,40 +16,29 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.pl.myweightapp.R
-import com.pl.myweightapp.core.presentation.util.observeAsEvents
 import com.pl.myweightapp.core.ui.ConfirmationDialog
-import com.pl.myweightapp.core.ui.UiEventConsumer
 import com.pl.myweightapp.core.util.toDateString
 
 @Composable
 fun EditMeasureDialog(
-    modifier: Modifier = Modifier,
-    onDismiss: () -> Unit,
-    snackbarHostState: SnackbarHostState,
-//    viewModel: EditMeasureViewModel = viewModel(key = "edit-$itemId") {
-//        EditMeasureViewModel(itemId)
-//    }
-    //viewModel: EditMeasureViewModel = viewModel()
-    viewModel: EditMeasureViewModel = hiltViewModel()
+    state: EditMeasureUiState,
+    onAction: (EditAction) -> Unit,
+    //onDismiss: () -> Unit,
 ) {
-    val state by viewModel.state.collectAsStateWithLifecycle()
+    //val state by viewModel.state.collectAsStateWithLifecycle()
 
     when (state) {
         EditMeasureUiState.Loading -> {
             Box(
-                modifier = modifier
+                modifier = Modifier
                     .fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
@@ -58,9 +47,9 @@ fun EditMeasureDialog(
         }
 
         is EditMeasureUiState.Loaded -> {
-            val state = state as EditMeasureUiState.Loaded
+            //val state = state as EditMeasureUiState.Loaded
             AlertDialog(
-                onDismissRequest = onDismiss,
+                onDismissRequest = { onAction(EditAction.OnDismissAction) },
                 confirmButton = {
                     Row(
                         modifier = Modifier
@@ -68,21 +57,21 @@ fun EditMeasureDialog(
                         //.border(1.dp, Color.Cyan)
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
-                        TextButton(onClick = onDismiss) {
+                        TextButton(onClick = { onAction(EditAction.OnDismissAction) }) {
                             Icon(
                                 imageVector = Icons.Default.Close,
                                 tint = MaterialTheme.colorScheme.primary,
                                 contentDescription = stringResource(R.string.edit_measure_cancel)
                             )
                         }
-                        TextButton(onClick = viewModel::onDeleteAction) {
+                        TextButton(onClick = { onAction(EditAction.OnDeleteAction) }) {
                             Icon(
                                 imageVector = Icons.Default.Delete,
                                 tint = MaterialTheme.colorScheme.error,
                                 contentDescription = stringResource(R.string.edit_measure_delete)
                             )
                         }
-                        TextButton(onClick = viewModel::onSaveAction) {
+                        TextButton(onClick = { onAction(EditAction.OnSaveAction) }) {
                             Icon(
                                 imageVector = Icons.Default.Check,
                                 tint = MaterialTheme.colorScheme.primary,
@@ -101,7 +90,7 @@ fun EditMeasureDialog(
                 text = {
                     WeightMeasureComponent(
                         initialMeasure = state.weight,
-                        onMeasureChanged = viewModel::updateMeasure
+                        onMeasureChanged = { onAction(EditAction.OnUpdateMeasure(it)) }
                     )
                 }
             )
@@ -110,15 +99,15 @@ fun EditMeasureDialog(
                 ConfirmationDialog(
                     title = stringResource(R.string.edit_measure_delete_measurement),
                     text = stringResource(R.string.edit_measure_are_you_sure_you_want_to_delete_this_measurement),
-                    onConfirm = viewModel::onConfirmDelete,
+                    onConfirm = { onAction(EditAction.OnConfirmDelete) },
                     confirmText = stringResource(R.string.edit_measure_delete_button),
                     confirmColor = MaterialTheme.colorScheme.error,
-                    onCancel = viewModel::onCancelDelete,
+                    onCancel = { onAction(EditAction.OnCancelDelete) },
                 )
             }
         }
 
-        EditMeasureUiState.Saving -> {
+        EditMeasureUiState.Processing -> {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -128,44 +117,5 @@ fun EditMeasureDialog(
                 CircularProgressIndicator()
             }
         }
-
-        /*EditMeasureUiState.Deleted -> {
-            val message = stringResource(R.string.successfully_deleted)
-            val savedState = state
-            LaunchedEffect(savedState) {
-                snackbarHostState.showSnackbar(message)
-                onDismiss() // zamykamy dialog
-            }
-        }*/
-
-        /*
-        EditMeasureUiState.Saved -> {
-            val message = stringResource(R.string.successfuly_saved)
-            val savedState = state
-            LaunchedEffect(savedState) {
-                snackbarHostState.showSnackbar(message)
-                onDismiss() // zamykamy dialog
-            }
-        }
-
-        is EditMeasureUiState.Error -> {
-            LaunchedEffect(state) {
-                if (state is EditMeasureUiState.Error) {
-                    val message = (state as EditMeasureUiState.Error).message
-                    snackbarHostState.showSnackbar(message)
-                    onDismiss() // zamykamy dialog
-                }
-            }
-        }
-        */
     }
-
-    UiEventConsumer(
-        events = viewModel.events,
-        snackbarHostState = snackbarHostState
-    )
-    observeAsEvents(viewModel.events) {
-        onDismiss()
-    }
-
 }

@@ -28,10 +28,8 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,37 +44,34 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.pl.myweightapp.R
-import com.pl.myweightapp.core.ui.UiEventConsumer
 import com.pl.myweightapp.data.local.Gender
 import java.io.File
 
 private const val TAG = "ProfileComponent"
 
+//@Composable
+//fun ProfileComponent(
+//    modifier: Modifier = Modifier,
+//    snackbarHostState: SnackbarHostState,
+//    viewModel: ProfileViewModel = hiltViewModel()
+//) {
+//    val state by viewModel.state.collectAsStateWithLifecycle()
+//
+//    UiEventConsumer(
+//        events = viewModel.events,
+//        snackbarHostState = snackbarHostState
+//    )
+//
+//    ProfileContent(
+//        modifier = modifier,
+//        state = state,
+//        onAction = viewModel::onAction
+//    )
+//}
+
 @Composable
 fun ProfileComponent(
-    modifier: Modifier = Modifier,
-    snackbarHostState: SnackbarHostState,
-    viewModel: ProfileViewModel = hiltViewModel()
-) {
-    val state by viewModel.state.collectAsStateWithLifecycle()
-
-    UiEventConsumer(
-        events = viewModel.events,
-        snackbarHostState = snackbarHostState
-    )
-
-    ProfileContent(
-        modifier = modifier,
-        state = state,
-        onAction = viewModel::onAction
-    )
-}
-
-@Composable
-fun ProfileContent(
     modifier: Modifier = Modifier,
     state: ProfileUiState,
     onAction: (ProfileAction) -> Unit,
@@ -312,7 +307,7 @@ fun ProfilePreview() {
         gender = Gender.MALE,
         isDirty = true
     )
-    ProfileContent(
+    ProfileComponent(
         state = fakeState,
         onAction = { action ->
             Log.d(TAG,"got action: $action")
@@ -323,7 +318,7 @@ fun ProfilePreview() {
 @Preview(name = "Saving")
 @Composable
 fun ProfilePreviewSaving() {
-    ProfileContent(
+    ProfileComponent(
         state = ProfileUiState(isSaving = true),
         onAction = { }
     )

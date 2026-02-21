@@ -28,7 +28,6 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -38,28 +37,29 @@ import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.pl.myweightapp.R
 import com.pl.myweightapp.core.ui.ConfirmationDialog
-import com.pl.myweightapp.core.ui.UiEventConsumer
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 private const val TAG = "SettingsScreen"
 
 @Composable
 fun SettingsScreen(
     modifier: Modifier = Modifier,
-    snackbarHostState: SnackbarHostState,
-    viewModel: SettingsViewModel = hiltViewModel(),
-) {
-    val state by viewModel.state.collectAsStateWithLifecycle()
+    state: UiState,
+    onAction: (Action) -> Unit,
+    profileState: ProfileUiState,
+    profileOnAction: (ProfileAction) -> Unit,
+    ) {
+    //val state by viewModel.state.collectAsStateWithLifecycle()
 
     val launcherChooseFileImport = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
     ) { uri ->
         Log.d(TAG, "onResult, uri: $uri")
         if (uri != null) {
-            viewModel.onAction(Action.OnCsvImport(uri))
+            onAction(Action.OnCsvImport(uri))
         }
     }
 
@@ -68,18 +68,13 @@ fun SettingsScreen(
     ) { uri ->
         Log.d(TAG, "onResult, uri: $uri")
         if (uri != null) {
-            viewModel.onAction(Action.OnCsvExport(uri))
+            onAction(Action.OnCsvExport(uri))
         }
     }
 
-    UiEventConsumer(
-        events = viewModel.events,
-        snackbarHostState = snackbarHostState
-    )
-
     if (state.isLoading) {
         Box(
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
@@ -100,7 +95,8 @@ fun SettingsScreen(
             )
             ProfileComponent(
                 modifier = Modifier.fillMaxWidth(),
-                snackbarHostState = snackbarHostState
+                state = profileState,
+                onAction = profileOnAction
             )
 
             ListItem(
@@ -108,7 +104,7 @@ fun SettingsScreen(
                 colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             )
             DataRow(Modifier.clickable {
-                viewModel.onAction(Action.OnLanguageClick)
+                onAction(Action.OnLanguageClick)
             }) {
                 Text(modifier = Modifier.weight(1f), text = stringResource(R.string.settings_language))
                 Text(modifier = Modifier.weight(1f), text = state.langDisplayResId?.let { stringResource(it) } ?: "–")
@@ -128,7 +124,7 @@ fun SettingsScreen(
                     .wrapContentWidth(Alignment.Start),
                     checked = state.useEmbeddedChart,
                     onCheckedChange = { checked ->
-                        viewModel.onAction(
+                        onAction(
                             Action.OnChangeUseEmbeddedChart(checked)
                         )
                     }
@@ -141,7 +137,7 @@ fun SettingsScreen(
             )
 
             DataRow(Modifier.clickable {
-                launcherChooseFileExport.launch(viewModel.suggestedExportFileName())
+                launcherChooseFileExport.launch(suggestedExportFileName())
             }) {
                 Text(stringResource(R.string.settings_csv_export))
             }
@@ -159,7 +155,7 @@ fun SettingsScreen(
                 colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             )
             DataRow(Modifier.clickable {
-                viewModel.onAction(Action.OnDeleteAllDataClick)
+                onAction(Action.OnDeleteAllDataClick)
             }) {
                 Text(
                     stringResource(R.string.settings_delete_all_data),
@@ -198,12 +194,12 @@ fun SettingsScreen(
             title = stringResource(R.string.settings_delete_all_data_question),
             text = stringResource(R.string.settings_delete_all_data_description),
             onConfirm = {
-                viewModel.onAction(Action.OnDeleteAllDataConfirm)
+                onAction(Action.OnDeleteAllDataConfirm)
             },
             confirmText = stringResource(R.string.settings_delete_all_data_delete_button),
             confirmColor = MaterialTheme.colorScheme.error,
             onCancel = {
-                viewModel.onAction(Action.OnDeleteAllDataCancel)
+                onAction(Action.OnDeleteAllDataCancel)
             },
         )
     }
@@ -211,11 +207,17 @@ fun SettingsScreen(
     if (state.showLanguageChooser) {
         ChooseLangComponent(
             modifier = Modifier,
-            onDismissRequest = { viewModel.onAction(Action.OnLanguageDismiss) },
-            onChooseLang = { viewModel.onAction(Action.OnLanguageChoose(it)) }
+            onDismissRequest = { onAction(Action.OnLanguageDismiss) },
+            onChooseLang = { onAction(Action.OnLanguageChoose(it)) }
         )
     }
 
+}
+
+fun suggestedExportFileName(): String {
+    val formatter = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")
+    val dateStr = LocalDateTime.now().format(formatter)
+    return "MyWeight_$dateStr.csv"
 }
 
 @Composable

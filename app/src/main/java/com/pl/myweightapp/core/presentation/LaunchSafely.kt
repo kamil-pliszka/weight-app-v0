@@ -10,6 +10,7 @@ import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
 
 inline fun <T> T.launchSafely(
+    crossinline onError: (Exception) -> Unit = {},
     crossinline block: suspend CoroutineScope.() -> Unit
 ) where T : ViewModel, T : UiEventOwner {
     viewModelScope.launch {
@@ -20,6 +21,7 @@ inline fun <T> T.launchSafely(
         } catch (e: Exception) {
             val tag = this@launchSafely::class.java.simpleName
             Log.e(tag, e.message, e)
+            onError(e)
             sendError(
                 R.string.error_msg_prefix,
                 exceptionToString(e)

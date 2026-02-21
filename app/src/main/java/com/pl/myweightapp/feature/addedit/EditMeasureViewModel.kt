@@ -14,7 +14,9 @@ import com.pl.myweightapp.feature.history.WeightUnitUi
 import com.pl.myweightapp.feature.history.toWeightUnit
 import com.pl.myweightapp.feature.history.toWeightUnitUi
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
@@ -31,11 +33,16 @@ sealed interface EditMeasureUiState {
         val showDeleteConfirm: Boolean = false
     ) : EditMeasureUiState
 
-    data object Saving : EditMeasureUiState
+    data object Processing : EditMeasureUiState
+}
 
-    //data object Saved : EditMeasureUiState
-    //data object Deleted : EditMeasureUiState
-    //data class Error(val message: String) : EditMeasureUiState
+sealed interface EditAction {
+    object OnDeleteAction: EditAction
+    object OnSaveAction: EditAction
+    data class OnUpdateMeasure(val newMeasure: BigDecimal): EditAction
+    object OnConfirmDelete: EditAction
+    object OnCancelDelete: EditAction
+    object OnDismissAction: EditAction
 }
 
 @HiltViewModel
@@ -45,6 +52,15 @@ class EditMeasureViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
 ) : ViewModel(), UiEventOwner by DefaultUiEventOwner() {
     private val itemId: Long = savedStateHandle["itemId"] ?: error("itemId is required")
+
+    private val _navEvents = MutableSharedFlow<AddEditMeasureEvent>(
+        extraBufferCapacity = 1
+    )
+    val navEvents = _navEvents.asSharedFlow()
+
+    private suspend fun sendCloseDialogEvent() {
+        _navEvents.emit(AddEditMeasureEvent.CloseDialog)
+    }
 
     companion object {
         private const val TAG = "EditMeasureVM"
@@ -64,7 +80,7 @@ class EditMeasureViewModel @Inject constructor(
                 .collect { entity ->
                     Log.d(TAG, "Got refreshed entity: $itemId")
                     if (entity == null) {
-                        //Deleted
+                        //when deleted
                         //_state.value = EditMeasureUiState.Deleted
                     } else {
                         _state.value = EditMeasureUiState.Loaded(
@@ -77,8 +93,24 @@ class EditMeasureViewModel @Inject constructor(
         }
     }
 
+    fun onAction(editAction: EditAction) {
+        when(editAction) {
+            EditAction.OnCancelDelete -> onCancelDelete()
+            EditAction.OnConfirmDelete -> onConfirmDelete()
+            EditAction.OnDeleteAction -> onDeleteAction()
+            EditAction.OnSaveAction -> onSaveAction()
+            is EditAction.OnUpdateMeasure -> updateMeasure(editAction.newMeasure)
+            EditAction.OnDismissAction -> onDismissAction()
+        }
+    }
 
-    fun updateMeasure(weight: BigDecimal) {
+    private fun onDismissAction() {
+        viewModelScope.launch {
+            sendCloseDialogEvent()
+        }
+    }
+
+    private fun updateMeasure(weight: BigDecimal) {
         val current = _state.value
         if (current is EditMeasureUiState.Loaded) {
             _state.value = current.copy(
@@ -99,42 +131,54 @@ class EditMeasureViewModel @Inject constructor(
     */
 
 
-    fun onSaveAction(/*closeDialogHandler : () -> Unit*/) {
+    private fun onSaveAction() {
         val current = _state.value
         if (current !is EditMeasureUiState.Loaded) return
 
-        _state.value = EditMeasureUiState.Saving
-        launchSafely {
+        _state.value = EditMeasureUiState.Processing
+        launchSafely(
+            onError = {
+                _state.value = current
+            }
+        ) {
             repository.update(
                 id = itemId,
                 date = current.date,
                 weight = current.weight,
                 unit = current.unit.toWeightUnit()
             )
-            //_state.value = EditMeasureUiState.Saved
-            //_state.value = current
             sendInfo(R.string.successfully_saved)
+            sendCloseDialogEvent()
         }
     }
 
-    fun onDeleteAction() {
+    private fun onDeleteAction() {
         val current = _state.value
         if (current is EditMeasureUiState.Loaded) {
             _state.value = current.copy(showDeleteConfirm = true)
         }
     }
 
-    fun onCancelDelete() {
+    private fun onCancelDelete() {
         val current = _state.value
         if (current is EditMeasureUiState.Loaded) {
             _state.value = current.copy(showDeleteConfirm = false)
         }
     }
 
-    fun onConfirmDelete() {
-        launchSafely {
+    private fun onConfirmDelete() {
+        val current = _state.value
+        if (current !is EditMeasureUiState.Loaded) return
+
+        _state.value = EditMeasureUiState.Processing
+        launchSafely(
+            onError = {
+                _state.value = current
+            }
+        ) {
             repository.delete(itemId)
             sendInfo(R.string.successfully_deleted)
+            sendCloseDialogEvent()
         }
     }
 

@@ -4,7 +4,6 @@ import android.util.Log
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.NavController
 import com.pl.myweightapp.R
 import com.pl.myweightapp.core.presentation.DefaultUiEventOwner
 import com.pl.myweightapp.core.presentation.UiEventOwner
@@ -13,12 +12,12 @@ import com.pl.myweightapp.core.presentation.sendInfo
 import com.pl.myweightapp.data.local.WeightMeasureEntity
 import com.pl.myweightapp.data.repository.WeightMeasureRepository
 import com.pl.myweightapp.data.repository.sortWeightMeasureHistory
-import com.pl.myweightapp.navigation.Screen
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
@@ -46,6 +45,10 @@ data class HistoryUiState(
     val deletingItem: WieghtMeasureUi? = null,
 )
 
+sealed interface HistoryUiEvent {
+    data class NavToEditMeasure(val id: Long) : HistoryUiEvent
+}
+
 @OptIn(ExperimentalCoroutinesApi::class)
 //class HistoryViewModel : ViewModel() {
 @HiltViewModel
@@ -58,6 +61,15 @@ class HistoryViewModel @Inject constructor(
 
     private val _state = MutableStateFlow(HistoryUiState())
     val state: StateFlow<HistoryUiState> = _state
+
+    private val _navEvents = MutableSharedFlow<HistoryUiEvent>(
+        extraBufferCapacity = 1
+    )
+    val navEvents = _navEvents.asSharedFlow()
+
+    private suspend fun sendNavToEditMeasure(id: Long) {
+        _navEvents.emit(HistoryUiEvent.NavToEditMeasure(id))
+    }
 
     private val refreshTrigger = MutableSharedFlow<Unit>()
 
@@ -144,11 +156,14 @@ class HistoryViewModel @Inject constructor(
     }
 
 
-    fun onAction(action: HistoryAction, navController: NavController) {
+    fun onAction(action: HistoryAction) {
         when (action) {
             is HistoryAction.OnItemEditAction -> {
                 //_state.update { it.copy(editingItemId = action.itemUI.id) }
-                navController.navigate("${Screen.Edit.route}/${action.itemUI.id}")
+                //navController.navigate("${Screen.Edit.route}/${action.itemUI.id}")
+                viewModelScope.launch {
+                    sendNavToEditMeasure(action.itemUI.id)
+                }
             }
 
             HistoryAction.OnCloseEditAction -> {

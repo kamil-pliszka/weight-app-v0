@@ -25,13 +25,14 @@ fun UiEventConsumer(
             is UiEvent.Error -> {
                 showErrorToast(context, event.asString(context))
             }
+
             is UiEvent.NetError -> snackbarHostState.showSnackbar(
                 message = event.error.toString(),
                 duration = SnackbarDuration.Long
             )
+
             is UiEvent.Info -> snackbarHostState.showSnackbar(event.asString(context))
             is UiEvent.Success -> snackbarHostState.showSnackbar(event.asString(context))
         }
     }
-
 }
