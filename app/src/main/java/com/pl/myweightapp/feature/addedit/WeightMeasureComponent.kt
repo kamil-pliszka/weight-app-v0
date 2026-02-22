@@ -1,23 +1,25 @@
 package com.pl.myweightapp.feature.addedit
 
 import android.util.Log
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.pl.myweightapp.R
+import com.pl.myweightapp.core.domain.WeightUnit
 import com.pl.myweightapp.core.ui.InfiniteCircularList
+import com.pl.myweightapp.core.ui.label
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -26,11 +28,13 @@ private const val TAG = "WeightMeasureComponent"
 fun WeightMeasureComponent(
     modifier: Modifier = Modifier,
     initialMeasure: BigDecimal,
+    weightUnit: WeightUnit,
     textStyle: TextStyle = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.Bold),
     textColor: Color = Color.LightGray,
     itemHeight: Dp = 40.dp,
     selectedTextColor: Color = Color.Black,
-    onMeasureChanged: (BigDecimal) -> Unit
+    onMeasureChanged: (BigDecimal) -> Unit,
+    onToggleWeightUnit: () -> Unit,
 ) {
     Row(
         modifier = modifier
@@ -105,7 +109,8 @@ fun WeightMeasureComponent(
         )
         //Spacer(modifier = Modifier.width(8.dp))
         Text(
-            text = stringResource(R.string.weight_unit_kg),
+            modifier = Modifier.width(32.dp).clickable { onToggleWeightUnit() },
+            text = weightUnit.label(),
             style = textStyle,
         )
 
@@ -119,6 +124,8 @@ fun WeightMeasureComponentPreview() {
     WeightMeasureComponent(
         modifier = Modifier,
         initialMeasure = "99.4".toBigDecimal(),
-        onMeasureChanged = {}
+        weightUnit = WeightUnit.LB,
+        onMeasureChanged = {},
+        onToggleWeightUnit = {},
     )
 }

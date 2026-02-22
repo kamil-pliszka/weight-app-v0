@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import com.pl.myweightapp.R
 import com.pl.myweightapp.core.ui.ConfirmationDialog
+import com.pl.myweightapp.core.ui.toWeightUnit
 import com.pl.myweightapp.core.util.toDateString
 
 @Composable
@@ -90,7 +91,9 @@ fun EditMeasureDialog(
                 text = {
                     WeightMeasureComponent(
                         initialMeasure = state.weight,
-                        onMeasureChanged = { onAction(EditAction.OnUpdateMeasure(it)) }
+                        weightUnit = state.unit.toWeightUnit(),
+                        onMeasureChanged = { onAction(EditAction.OnUpdateMeasure(it)) },
+                        onToggleWeightUnit = {onAction(EditAction.ToggleWeightUnit) },
                     )
                 }
             )

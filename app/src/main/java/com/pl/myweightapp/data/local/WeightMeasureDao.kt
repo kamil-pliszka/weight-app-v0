@@ -7,6 +7,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
+import com.pl.myweightapp.core.domain.WeightUnit
 import kotlinx.coroutines.flow.Flow
 import java.math.BigDecimal
 
@@ -62,6 +63,12 @@ interface WeightMeasureDao {
         LIMIT 1
     """)
     suspend fun findLastWeightMeasure(): BigDecimal?
+    @Query("""
+        SELECT weight, unit FROM ${WeightMeasureEntity.TABLE}
+        ORDER BY date DESC, id DESC
+        LIMIT 1
+    """)
+    suspend fun findLastWeightMeasureAndUnit(): LastWeightMeasure?
     @Query("""
         SELECT * FROM ${WeightMeasureEntity.TABLE}
     """)

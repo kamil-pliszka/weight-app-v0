@@ -24,8 +24,9 @@ import javax.inject.Inject
 
 data class AddMeasureState(
     //val showDialog: Boolean = false,
-    val isLoading : Boolean = false,
+    val isLoading: Boolean = false,
     val lastWeight: BigDecimal? = null,
+    val weightUnit: WeightUnit = WeightUnit.KG,
     val currentWeightMeasure: BigDecimal = "56.7".toBigDecimal(),
     //choose date dialog state
     val showDateDialog: Boolean = false,
@@ -33,21 +34,23 @@ data class AddMeasureState(
 )
 
 sealed interface AddAction {
-    object OnShowDateDialogAction: AddAction
-    object OnDialogConfirmAction: AddAction
+    object OnShowDateDialogAction : AddAction
+    object OnDialogConfirmAction : AddAction
     data class UpdateCurrentMeasure(val measure: BigDecimal) : AddAction
-    object OnCloseDateDialog: AddAction
-    data class UpdateChoosenDate(val date: LocalDate): AddAction
-    object OnDismissAction: AddAction
+    object OnCloseDateDialog : AddAction
+    data class UpdateChoosenDate(val date: LocalDate) : AddAction
+    object OnDismissAction : AddAction
+    object ToggleWeightUnit : AddAction
 }
 
 @HiltViewModel
 class AddMeasureViewModel @Inject constructor(
-    private val repository: WeightMeasureRepository
-): ViewModel(), UiEventOwner by DefaultUiEventOwner() {
+    private val repository: WeightMeasureRepository,
+) : ViewModel(), UiEventOwner by DefaultUiEventOwner() {
     companion object {
         private const val TAG = "AddMeasureVM"
     }
+
     private val _state = MutableStateFlow(AddMeasureState())
     val state = _state.asStateFlow()
 
@@ -61,26 +64,26 @@ class AddMeasureViewModel @Inject constructor(
     }
 
     init {
-        Log.d(TAG,"init")
+        Log.d(TAG, "init")
         launchSafely {
             _state.update { it.copy(isLoading = true) }
-            val value = repository.findLastWeightMeasure()
-            Log.d(TAG,"LastWeightMeasure: $value")
-            if (value != null) {
-                _state.update { it.copy(lastWeight = value, currentWeightMeasure = value) }
+            repository.findLastWeightMeasureAndUnit()?.let { (value, unit) ->
+                Log.d(TAG, "LastWeightMeasure: $value, unit: $unit")
+                _state.update { it.copy(lastWeight = value, currentWeightMeasure = value, weightUnit = unit) }
             }
             _state.update { it.copy(isLoading = false) }
         }
     }
 
     fun onAction(addAction: AddAction) {
-        when(addAction) {
+        when (addAction) {
             AddAction.OnCloseDateDialog -> onCloseDateDialog()
             AddAction.OnDialogConfirmAction -> onDialogConfirmAction()
             AddAction.OnShowDateDialogAction -> onShowDateDialogAction()
             is AddAction.UpdateChoosenDate -> updateChoosenDate(addAction.date)
             is AddAction.UpdateCurrentMeasure -> updateCurrentMeasure(addAction.measure)
             AddAction.OnDismissAction -> onDismissAction()
+            AddAction.ToggleWeightUnit -> onToggleWeightUnit()
         }
     }
 
@@ -89,6 +92,7 @@ class AddMeasureViewModel @Inject constructor(
             sendCloseDialogEvent()
         }
     }
+
     private fun onDialogConfirmAction() {
         val currentMeasure = state.value.currentWeightMeasure
         val choosenDate = state.value.choosenDate
@@ -101,7 +105,7 @@ class AddMeasureViewModel @Inject constructor(
             repository.insertMeasure(
                 date = instantDate,
                 weight = currentMeasure,
-                unit = WeightUnit.KG
+                unit = state.value.weightUnit
             )
             //_state.update { it.copy(showDialog = false) }
             sendCloseDialogEvent()
@@ -141,6 +145,10 @@ class AddMeasureViewModel @Inject constructor(
 
     private fun updateCurrentMeasure(newMeasure: BigDecimal) {
         _state.update { it.copy(currentWeightMeasure = newMeasure) }
+    }
+
+    private fun onToggleWeightUnit() {
+        _state.update { it.copy(weightUnit = if (state.value.weightUnit == WeightUnit.KG) WeightUnit.LB else WeightUnit.KG) }
     }
 
 }

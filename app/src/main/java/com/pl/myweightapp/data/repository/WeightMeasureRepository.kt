@@ -1,6 +1,7 @@
 package com.pl.myweightapp.data.repository
 
 import com.pl.myweightapp.core.domain.WeightUnit
+import com.pl.myweightapp.data.local.LastWeightMeasure
 import com.pl.myweightapp.data.local.WeightMeasureDao
 import com.pl.myweightapp.data.local.WeightMeasureEntity
 import kotlinx.coroutines.Dispatchers
@@ -56,6 +57,10 @@ class WeightMeasureRepository(val weightMeasureDao: WeightMeasureDao) {
 
     suspend fun findLastWeightMeasure(): BigDecimal? = withContext(Dispatchers.IO) {
         weightMeasureDao.findLastWeightMeasure()
+    }
+
+    suspend fun findLastWeightMeasureAndUnit(): LastWeightMeasure? = withContext(Dispatchers.IO) {
+        weightMeasureDao.findLastWeightMeasureAndUnit()
     }
 
     suspend fun findWeightMeasureHistory(): List<WeightMeasureEntity> = withContext(Dispatchers.IO) {

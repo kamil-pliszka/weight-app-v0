@@ -10,12 +10,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.pl.myweightapp.core.domain.WeightUnit
+import com.pl.myweightapp.core.ui.label
 import com.pl.myweightapp.data.local.WeightMeasureEntity
 import com.pl.myweightapp.ui.theme.MyWeightAppTheme
 import java.time.Instant
@@ -47,7 +47,7 @@ fun HistoryListItem(
             modifier = Modifier.weight(1f),
         )
 
-        val unitLabel = stringResource(itemUi.unit.toResourceId())
+        val unitLabel = itemUi.unit.label()
         Text(
             text = "${itemUi.weight.formatted} $unitLabel",
             fontSize = 14.sp,

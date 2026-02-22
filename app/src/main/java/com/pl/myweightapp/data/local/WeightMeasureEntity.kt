@@ -20,3 +20,8 @@ data class WeightMeasureEntity(
         const val TABLE = "weight_measure"
     }
 }
+
+data class LastWeightMeasure(
+    val weight: BigDecimal,
+    val unit: WeightUnit
+)

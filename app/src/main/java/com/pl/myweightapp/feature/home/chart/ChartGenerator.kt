@@ -30,7 +30,7 @@ fun Long.millisToDaysFloat(): Float {
 }
 
 fun Float.daysToMillis(): Long {
-    return (this * 86_400_000.0).toLong()
+    return kotlin.math.round(this * 86_400_000.0).toLong()
 }
 
 private const val TAG = "ChartGenerator"
@@ -78,6 +78,7 @@ fun generateChartBitmap(
 //    Log.d(TAG,"screen size: ${screenWidth}x$screenHeight")
 //    Log.d(TAG,"screen size w.padding: ${Resources.getSystem().displayMetrics.widthPixels-padding.toInt()}x${Resources.getSystem().displayMetrics.heightPixels-padding.toInt()}")
     val measurementsOnChart = totalMeasurements.subList(startIdx, totalMeasurements.size)
+    if (measurementsOnChart.isEmpty()) return chart.chartBitmap
     val periodOnChartDays = (measurementsOnChart.last().timestamp.toEpochMilli() -
             measurementsOnChart.first().timestamp.toEpochMilli()).millisToDaysFloat()
     Log.d(TAG, "periodOnChartDays : $periodOnChartDays")
@@ -121,6 +122,11 @@ fun configureChart(
     Log.d(TAG, "periodOnChartDays : $periodOnChartDays")
     val totalEntries = createEntries(totalMeasurements, startMillis)
     val entries = totalEntries.subList(startIdx, totalEntries.size)
+    for (i in 1 until totalEntries.size) {
+        check(totalEntries[i].x >= totalEntries[i - 1].x) {
+            "Entries must be sorted by x ascending"
+        }
+    }
 
     chart.xAxis.apply {
         valueFormatter = when {
@@ -183,7 +189,7 @@ fun configureChart(
     }
     if (movingAverage1 != null) {
         Log.d(TAG, "Generate MAV1, period: $movingAverage1")
-        val mavEntries = generateMovingAverageData(totalEntries, startIdx, movingAverage1)
+        val mavEntries = generateMovingAverageData(totalEntries, startIdx, movingAverage1.toFloat())
         if (mavEntries.isNotEmpty()) {
             dataSets.add(
                 LineDataSet(
@@ -201,7 +207,7 @@ fun configureChart(
     }
     if (movingAverage2 != null) {
         Log.d(TAG, "Generate MAV2, period: $movingAverage2")
-        val mavEntries = generateMovingAverageData(totalEntries, startIdx, movingAverage2)
+        val mavEntries = generateMovingAverageData(totalEntries, startIdx, movingAverage2.toFloat())
         if (mavEntries.isNotEmpty()) {
             dataSets.add(
                 LineDataSet(
@@ -239,31 +245,37 @@ fun createEntries(measurements: List<Measurement>, startMillis: Long): List<Entr
 private fun generateMovingAverageData(
     totalEntries: List<Entry>,
     startIdx: Int,
-    mavPeriod: Int
+    windowDuration: Float
 ): List<Entry> {
-    val res = mutableListOf<Entry>()
-    // sanity check
-    if (totalEntries.isEmpty() || mavPeriod <= 0) return res
 
-    // pomocnicza suma dla efektywności
+    if (totalEntries.isEmpty() || windowDuration <= 0f)
+        return emptyList()
+
+    val result = ArrayList<Entry>((totalEntries.size - startIdx).coerceAtLeast(0))
+
     var startWindowIdx = 0
-    for (i in startIdx until totalEntries.size) {
-        val startWindowDay = totalEntries[i].x - mavPeriod.toFloat()
-        while (totalEntries[startWindowIdx].x < startWindowDay) {
+    var sum = 0.0
+
+    for (i in totalEntries.indices) {
+
+        sum += totalEntries[i].y
+        val windowStartX = totalEntries[i].x - windowDuration
+
+        while (startWindowIdx < i &&
+            totalEntries[startWindowIdx].x < windowStartX
+        ) {
+            sum -= totalEntries[startWindowIdx].y
             startWindowIdx++
         }
-        assert(startWindowIdx <= i)
-        //val startWindow = (i - mavPeriod + 1).coerceAtLeast(0)
-        // oblicz sumę od startWindow do i
-        var sum = 0f
-        for (j in startWindowIdx..i) {
-            sum += totalEntries[j].y
+
+        if (i >= startIdx) {
+            val count = i - startWindowIdx + 1
+            val avg = (sum / count).toFloat()
+            result.add(Entry(totalEntries[i].x, avg))
         }
-        val average = sum / (i - startWindowIdx + 1)
-        res.add(Entry(totalEntries[i].x, average))
     }
 
-    return res
+    return result
 }
 
 class DateAxisFormatterShort(

@@ -9,10 +9,10 @@ import com.pl.myweightapp.core.presentation.DefaultUiEventOwner
 import com.pl.myweightapp.core.presentation.UiEventOwner
 import com.pl.myweightapp.core.presentation.launchSafely
 import com.pl.myweightapp.core.presentation.sendInfo
+import com.pl.myweightapp.core.ui.WeightUnitUi
+import com.pl.myweightapp.core.ui.toWeightUnit
+import com.pl.myweightapp.core.ui.toWeightUnitUi
 import com.pl.myweightapp.data.repository.WeightMeasureRepository
-import com.pl.myweightapp.feature.history.WeightUnitUi
-import com.pl.myweightapp.feature.history.toWeightUnit
-import com.pl.myweightapp.feature.history.toWeightUnitUi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,6 +43,7 @@ sealed interface EditAction {
     object OnConfirmDelete: EditAction
     object OnCancelDelete: EditAction
     object OnDismissAction: EditAction
+    object ToggleWeightUnit: EditAction
 }
 
 @HiltViewModel
@@ -101,6 +102,7 @@ class EditMeasureViewModel @Inject constructor(
             EditAction.OnSaveAction -> onSaveAction()
             is EditAction.OnUpdateMeasure -> updateMeasure(editAction.newMeasure)
             EditAction.OnDismissAction -> onDismissAction()
+            EditAction.ToggleWeightUnit -> onToggleWeightUnit()
         }
     }
 
@@ -179,6 +181,13 @@ class EditMeasureViewModel @Inject constructor(
             repository.delete(itemId)
             sendInfo(R.string.successfully_deleted)
             sendCloseDialogEvent()
+        }
+    }
+
+    private fun onToggleWeightUnit() {
+        val current = _state.value
+        if (current is EditMeasureUiState.Loaded) {
+            _state.value = current.copy(unit = if (current.unit == WeightUnitUi.KG) WeightUnitUi.LB else WeightUnitUi.KG)
         }
     }
 

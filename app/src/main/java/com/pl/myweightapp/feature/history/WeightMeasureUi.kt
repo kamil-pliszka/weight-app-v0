@@ -3,15 +3,14 @@ package com.pl.myweightapp.feature.history
 import android.icu.text.NumberFormat
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
-import com.pl.myweightapp.R
-import com.pl.myweightapp.core.domain.WeightUnit
+import com.pl.myweightapp.core.ui.WeightUnitUi
+import com.pl.myweightapp.core.ui.toWeightUnitUi
 import com.pl.myweightapp.core.util.toDateString
 import com.pl.myweightapp.data.local.WeightMeasureEntity
 import java.math.BigDecimal
 import java.time.Instant
 import java.util.Locale
 
-enum class WeightUnitUi { KG, LB }
 
 @Immutable
 data class WieghtMeasureUi(
@@ -28,19 +27,6 @@ data class DisplayableValue<T>(
     val formatted: String
 )
 
-fun WeightUnit.toWeightUnitUi() : WeightUnitUi {
-    return when(this) {
-        WeightUnit.KG -> WeightUnitUi.KG
-        WeightUnit.LB -> WeightUnitUi.LB
-    }
-}
-
-fun WeightUnitUi.toWeightUnit(): WeightUnit {
-    return when (this) {
-        WeightUnitUi.KG -> WeightUnit.KG
-        WeightUnitUi.LB -> WeightUnit.LB
-    }
-}
 
 fun Instant.toDisplayableInstant() = DisplayableValue(this, this.toDateString())
 
@@ -71,18 +57,6 @@ fun BigDecimal.toDisplayableNumberWithSign() =
     )
 
 
-fun WeightUnitUi.toResourceId(): Int {
-    return when (this) {
-        WeightUnitUi.KG -> R.string.weight_unit_kg
-        WeightUnitUi.LB -> R.string.weight_unit_lb
-    }
-}
-fun WeightUnit.toResourceId(): Int {
-    return when (this) {
-        WeightUnit.KG -> R.string.weight_unit_kg
-        WeightUnit.LB -> R.string.weight_unit_lb
-    }
-}
 
 fun WeightMeasureEntity.toWeightMeasureUi(change: BigDecimal? = null): WieghtMeasureUi {
     return WieghtMeasureUi(

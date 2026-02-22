@@ -23,11 +23,29 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import com.pl.myweightapp.R
+import com.pl.myweightapp.core.domain.WeightUnit
 import com.pl.myweightapp.core.util.toDateString
 import com.pl.myweightapp.core.util.toMillis
+import java.math.BigDecimal
 import java.time.LocalDate
 
+
+@Preview(name = "processing")
+@Composable
+fun AddMeasureDialogPreview() {
+    AddMeasureDialog(
+        state = AddMeasureState(
+            lastWeight = BigDecimal("123.4"),
+            weightUnit = WeightUnit.LB,
+        ),
+        onAction = {},
+//        onChangePeriod = { },
+//        onChangeMovingAverages = { _, _ -> },
+//        onChangeChartDimensions = { _, _ -> },
+    )
+}
 
 @Composable
 fun AddMeasureDialog(
@@ -83,7 +101,9 @@ fun AddMeasureDialog(
             text = {
                 WeightMeasureComponent(
                     initialMeasure = state.currentWeightMeasure,
-                    onMeasureChanged = { onAction(AddAction.UpdateCurrentMeasure(it)) }
+                    weightUnit = state.weightUnit,
+                    onMeasureChanged = { onAction(AddAction.UpdateCurrentMeasure(it)) },
+                    onToggleWeightUnit = { onAction(AddAction.ToggleWeightUnit) },
                 )
             },
         )
