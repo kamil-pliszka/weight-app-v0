@@ -30,7 +30,6 @@ import com.pl.myweightapp.feature.home.chart.generateChartBitmap
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
@@ -232,7 +231,7 @@ class HomeViewModel @Inject constructor(
                         startIdx = startIdx,
                         widthPx = state.value.chartWidthPx,
                         heightPx = state.value.chartHeightPx,
-                        destinationValue = state.value.destinationWeight,
+                        targetValue = state.value.destinationWeight,
                         movingAverage1 = state.value.movingAverage1,
                         movingAverage2 = state.value.movingAverage2,
                     )
@@ -245,7 +244,7 @@ class HomeViewModel @Inject constructor(
                         it.copy(chartBitmap = bitmap.asImageBitmap())
                     }
                     exportChart(bitmap)
-                    delay(5000L)
+                    //delay(5000L)
                 } else {
                     _state.update {
                         it.copy(chartBitmap = null)

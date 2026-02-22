@@ -43,7 +43,7 @@ fun EmbededChartComponent(
                 chart = chart,
                 totalMeasurements = measurements,
                 startIdx = startIdx,
-                destinationValue = state.destinationWeight,
+                targetValue = state.destinationWeight,
                 movingAverage1 = state.movingAverage1,
                 movingAverage2 = state.movingAverage2,
             )

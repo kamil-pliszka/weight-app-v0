@@ -264,7 +264,7 @@ class ProfileViewModel @Inject constructor(
             WeightUnit.KG -> weight.toFloat().lbsToKg()
             WeightUnit.LB -> weight.toFloat().kgToLbs()
         }
-        val newWeightStr = "%.1f".format(newWeightValue).replace(".0", "")
+        val newWeightStr = "%.1f".format(newWeightValue).replace(",", ".").replace(".0", "")
         Log.d(TAG, "newWeightStr: $newWeightStr")
         update { copy(targetWeight = newWeightStr) }
     }

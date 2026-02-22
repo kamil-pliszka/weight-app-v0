@@ -38,6 +38,7 @@ import androidx.navigation.compose.dialog
 import androidx.navigation.navArgument
 import com.pl.myweightapp.core.presentation.util.observeAsEvents
 import com.pl.myweightapp.core.ui.UiEventConsumer
+import com.pl.myweightapp.feature.addedit.AddEditMeasureEvent
 import com.pl.myweightapp.feature.addedit.AddMeasureDialog
 import com.pl.myweightapp.feature.addedit.AddMeasureViewModel
 import com.pl.myweightapp.feature.addedit.EditMeasureDialog
@@ -79,8 +80,8 @@ fun Navigation(
         composable(route = Screen.HistoryScreen.route) {
             val viewModel = hiltViewModel<HistoryViewModel>()
             UiEventConsumer(snackbarHostState, viewModel.events)
-            observeAsEvents(viewModel.navEvents) {event ->
-                when(event) {
+            observeAsEvents(viewModel.navEvents) { event ->
+                when (event) {
                     is HistoryUiEvent.NavToEditMeasure -> {
                         navController.navigate("${Screen.Edit.route}/${event.id}")
                     }
@@ -101,8 +102,10 @@ fun Navigation(
         ) {
             val viewModel = hiltViewModel<EditMeasureViewModel>()
             UiEventConsumer(snackbarHostState, viewModel.events)
-            observeAsEvents(viewModel.navEvents) {
-                navController.popBackStack()
+            observeAsEvents(viewModel.navEvents) { event ->
+                when (event) {
+                    AddEditMeasureEvent.CloseDialog -> navController.popBackStack()
+                }
             }
             val state by viewModel.state.collectAsStateWithLifecycle()
             EditMeasureDialog(
@@ -115,8 +118,10 @@ fun Navigation(
         ) {
             val viewModel = hiltViewModel<AddMeasureViewModel>()
             UiEventConsumer(snackbarHostState, viewModel.events)
-            observeAsEvents(viewModel.navEvents) {
-                navController.popBackStack()
+            observeAsEvents(viewModel.navEvents) { event ->
+                when (event) {
+                    AddEditMeasureEvent.CloseDialog -> navController.popBackStack()
+                }
             }
             val state by viewModel.state.collectAsStateWithLifecycle()
             AddMeasureDialog(

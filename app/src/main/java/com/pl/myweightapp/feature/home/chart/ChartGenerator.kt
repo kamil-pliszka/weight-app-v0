@@ -25,13 +25,21 @@ data class Measurement(
     val value: Float
 )
 
+fun Long.millisToDaysFloat(): Float {
+    return (this / 86_400_000.0).toFloat()
+}
+
+fun Float.daysToMillis(): Long {
+    return (this * 86_400_000.0).toLong()
+}
+
 private const val TAG = "ChartGenerator"
 fun generateChartBitmap(
     context: Context,
     totalMeasurements: List<Measurement>,//muszą już być posortowane w kolejności rosnąco
     startIdx: Int,
     widthPx: Int, heightPx: Int,
-    destinationValue: Float?,
+    targetValue: Float?,
     movingAverage1: Int? = null,
     movingAverage2: Int? = null,
 ): Bitmap {
@@ -58,7 +66,7 @@ fun generateChartBitmap(
         chart,
         totalMeasurements,
         startIdx,
-        destinationValue,
+        targetValue,
         movingAverage1,
         movingAverage2
     )
@@ -71,8 +79,8 @@ fun generateChartBitmap(
 //    Log.d(TAG,"screen size w.padding: ${Resources.getSystem().displayMetrics.widthPixels-padding.toInt()}x${Resources.getSystem().displayMetrics.heightPixels-padding.toInt()}")
     val measurementsOnChart = totalMeasurements.subList(startIdx, totalMeasurements.size)
     val periodOnChartDays = (measurementsOnChart.last().timestamp.toEpochMilli() -
-            measurementsOnChart.first().timestamp.toEpochMilli()) / (1000 * 60 * 60 * 24)
-    Log.d(TAG,"periodOnChartDays : $periodOnChartDays")
+            measurementsOnChart.first().timestamp.toEpochMilli()).millisToDaysFloat()
+    Log.d(TAG, "periodOnChartDays : $periodOnChartDays")
     val isLandscape = widthPx > heightPx
     val height = heightPx
     val width = if (isLandscape) {
@@ -80,7 +88,7 @@ fun generateChartBitmap(
     } else {
         (periodOnChartDays * 3.0 * widthPx / 365).toInt().coerceIn(widthPx, 6 * widthPx)
     }
-    Log.d(TAG,"chart size: ${width}x$height")
+    Log.d(TAG, "chart size: ${width}x$height")
     chart.measure(
         View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
         View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY)
@@ -97,11 +105,11 @@ fun configureChart(
     chart: LineChart,
     totalMeasurements: List<Measurement>,//muszą już być posortowane w kolejności rosnąco
     startIdx: Int,
-    destinationValue: Float?,
+    targetValue: Float?,
     movingAverage1: Int? = null,
     movingAverage2: Int? = null,
 ) {
-    Log.d(TAG,"configureChart")
+    Log.d(TAG, "configureChart")
     if (totalMeasurements.isEmpty()) {
         chart.clear()
         return
@@ -109,13 +117,16 @@ fun configureChart(
     val measurementsOnChart = totalMeasurements.subList(startIdx, totalMeasurements.size)
     val startMillis = measurementsOnChart.first().timestamp.toEpochMilli()
     val periodOnChartDays = (measurementsOnChart.last().timestamp.toEpochMilli() -
-            measurementsOnChart.first().timestamp.toEpochMilli()) / (1000 * 60 * 60 * 24)
-    Log.d(TAG,"periodOnChartDays : $periodOnChartDays")
+            measurementsOnChart.first().timestamp.toEpochMilli()).millisToDaysFloat()
+    Log.d(TAG, "periodOnChartDays : $periodOnChartDays")
     val totalEntries = createEntries(totalMeasurements, startMillis)
     val entries = totalEntries.subList(startIdx, totalEntries.size)
 
     chart.xAxis.apply {
-        valueFormatter = DateAxisFormatter(startMillis, periodOnChartDays)
+        valueFormatter = when {
+            (periodOnChartDays < 100) -> DateAxisFormatterShort(startMillis)
+            else -> DateAxisFormatterMedium(startMillis)
+        }
         //textSize = 12f      // jeśli generujesz bitmapę 1600px wysokości
         yOffset = 6f
         //labelRotationAngle = -45f
@@ -123,10 +134,10 @@ fun configureChart(
         //setCenterAxisLabels(true)
         if (periodOnChartDays < 100) {
             setLabelCount(5, true)
-            Log.d(TAG,"Set labelCount = 5")
+            Log.d(TAG, "Set labelCount = 5")
         } else /*if (periodOnChartDays < 300)*/ {
             setLabelCount((periodOnChartDays / 30).toInt(), true)
-            Log.d(TAG,"Set labelCount to: ${(periodOnChartDays / 30).toInt()} -> $labelCount")
+            Log.d(TAG, "Set labelCount to: ${(periodOnChartDays / 30).toInt()} -> $labelCount")
         }
     }
 
@@ -153,12 +164,12 @@ fun configureChart(
             color = Color.Green.toArgb()
         }
     )
-    if (destinationValue != null) {
+    if (targetValue != null) {
         dataSets.add(
             LineDataSet(
                 listOf(
-                    Entry(entries.first().x, destinationValue),
-                    Entry(entries.last().x, destinationValue),
+                    Entry(entries.first().x, targetValue),
+                    Entry(entries.last().x, targetValue),
                 ),
                 context.getString(R.string.chart_target)
             ).apply {
@@ -171,11 +182,12 @@ fun configureChart(
         )
     }
     if (movingAverage1 != null) {
-        Log.d(TAG,"Generate MAV1, period: $movingAverage1")
+        Log.d(TAG, "Generate MAV1, period: $movingAverage1")
         val mavEntries = generateMovingAverageData(totalEntries, startIdx, movingAverage1)
         if (mavEntries.isNotEmpty()) {
             dataSets.add(
-                LineDataSet(mavEntries,
+                LineDataSet(
+                    mavEntries,
                     context.getString(R.string.chart_mav) + movingAverage1
                 ).apply {
                     lineWidth = 1.5f
@@ -188,11 +200,12 @@ fun configureChart(
         }
     }
     if (movingAverage2 != null) {
-        Log.d(TAG,"Generate MAV2, period: $movingAverage2")
+        Log.d(TAG, "Generate MAV2, period: $movingAverage2")
         val mavEntries = generateMovingAverageData(totalEntries, startIdx, movingAverage2)
         if (mavEntries.isNotEmpty()) {
             dataSets.add(
-                LineDataSet(mavEntries,
+                LineDataSet(
+                    mavEntries,
                     context.getString(R.string.chart_mav) + movingAverage2
                 ).apply {
                     lineWidth = 2f
@@ -213,7 +226,8 @@ fun createEntries(measurements: List<Measurement>, startMillis: Long): List<Entr
     return measurements
         .mapIndexed { _, m -> //Int, Measurement
             Entry(
-                (m.timestamp.toEpochMilli() - startMillis).toFloat(),
+                //(m.timestamp.toEpochMilli() - startMillis).toFloat(),
+                (m.timestamp.toEpochMilli() - startMillis).millisToDaysFloat(),
                 m.value
             )
         }
@@ -222,46 +236,63 @@ fun createEntries(measurements: List<Measurement>, startMillis: Long): List<Entr
 /**
  * @mavPeriod - okres
  */
-private fun generateMovingAverageData(totalEntries : List<Entry>, startIdx: Int, mavPeriod: Int) : List<Entry> {
+private fun generateMovingAverageData(
+    totalEntries: List<Entry>,
+    startIdx: Int,
+    mavPeriod: Int
+): List<Entry> {
     val res = mutableListOf<Entry>()
     // sanity check
     if (totalEntries.isEmpty() || mavPeriod <= 0) return res
 
     // pomocnicza suma dla efektywności
+    var startWindowIdx = 0
     for (i in startIdx until totalEntries.size) {
-        val startWindow = (i - mavPeriod + 1).coerceAtLeast(0)
+        val startWindowDay = totalEntries[i].x - mavPeriod.toFloat()
+        while (totalEntries[startWindowIdx].x < startWindowDay) {
+            startWindowIdx++
+        }
+        assert(startWindowIdx <= i)
+        //val startWindow = (i - mavPeriod + 1).coerceAtLeast(0)
         // oblicz sumę od startWindow do i
         var sum = 0f
-        for (j in startWindow..i) {
+        for (j in startWindowIdx..i) {
             sum += totalEntries[j].y
         }
-        val average = sum / (i - startWindow + 1)
+        val average = sum / (i - startWindowIdx + 1)
         res.add(Entry(totalEntries[i].x, average))
     }
 
     return res
 }
 
-class DateAxisFormatter(
+class DateAxisFormatterShort(
     private val startMillis: Long,
-    private val periodDays: Long
 ) : ValueFormatter() {
-
     private val formatterShort = DateTimeFormatter.ofPattern("dd.MM")
         .withZone(ZoneId.systemDefault())
+
+    override fun getAxisLabel(value: Float, axis: AxisBase?): String {
+        val millis = startMillis + value.daysToMillis()
+        val instant = Instant.ofEpochMilli(millis)
+        //Log.d(TAG,"getAxisLabel : $instant")
+
+        return formatterShort.format(instant)
+    }
+}
+
+class DateAxisFormatterMedium(
+    private val startMillis: Long,
+) : ValueFormatter() {
 
     private val formatterMedium = DateTimeFormatter.ofPattern("dd.MM.yyyy")
         .withZone(ZoneId.systemDefault())
 
     override fun getAxisLabel(value: Float, axis: AxisBase?): String {
-        val millis = startMillis + value.toLong()
+        val millis = startMillis + value.daysToMillis()
         val instant = Instant.ofEpochMilli(millis)
         //Log.d(TAG,"getAxisLabel : $instant")
-
-        return when {
-            periodDays <= 100 -> formatterShort.format(instant)
-            else -> formatterMedium.format(instant)
-        }
+        return formatterMedium.format(instant)
     }
 }
 
