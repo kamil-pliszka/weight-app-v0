@@ -12,9 +12,8 @@ sealed interface UiEvent {
         val args: List<Any> = emptyList()
     ) : UiEvent
 
-    data class Success(
-        val resId: Int,
-        val args: List<Any> = emptyList()
+    data class Message(
+        val message: String
     ) : UiEvent
 
     data class Info(
@@ -24,13 +23,6 @@ sealed interface UiEvent {
 }
 
 fun UiEvent.Error.asString(context: Context): String {
-    return context.getString(
-        resId,
-        *args.toTypedArray()
-    )
-}
-
-fun UiEvent.Success.asString(context: Context): String {
     return context.getString(
         resId,
         *args.toTypedArray()

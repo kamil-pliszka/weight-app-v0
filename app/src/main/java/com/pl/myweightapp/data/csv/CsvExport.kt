@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.util.Log
+import com.pl.myweightapp.data.local.WeightMeasureEntity
 import com.pl.myweightapp.data.repository.WeightMeasureRepository
 import com.pl.myweightapp.data.repository.sortWeightMeasureHistory
 import kotlinx.coroutines.Dispatchers
@@ -17,6 +18,15 @@ suspend fun exportWeightCsv(
     onProgressChange: (Float) -> Unit
 ): Int = withContext(Dispatchers.IO) {
     val historyEntities = sortWeightMeasureHistory(repo.findWeightMeasureHistory())
+    exportWeightCsv(historyEntities, context, uri, onProgressChange)
+}
+suspend fun exportWeightCsv(
+    history: List<WeightMeasureEntity>,
+    context: Context,
+    uri: Uri,
+    onProgressChange: (Float) -> Unit
+): Int = withContext(Dispatchers.IO) {
+    val historyEntities = sortWeightMeasureHistory(history)
     Log.d(TAG,"history entities : ${historyEntities.size}")
     context.contentResolver.openOutputStream(uri)?.use { output ->
         val writer = output.bufferedWriter()

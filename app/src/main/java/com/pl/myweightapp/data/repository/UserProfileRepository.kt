@@ -14,8 +14,12 @@ class UserProfileRepository(
         dao.upsert(profile.copy(id = 0)) //może być tylko jeden rekord z id = 0
     }
 
-    suspend fun deleteAll() = withContext(Dispatchers.IO){
+    suspend fun deleteAll() = withContext(Dispatchers.IO) {
         dao.deleteAll()
+    }
+
+    suspend fun hasAny(): Boolean = withContext(Dispatchers.IO) {
+        dao.hasAny()
     }
 
     /*

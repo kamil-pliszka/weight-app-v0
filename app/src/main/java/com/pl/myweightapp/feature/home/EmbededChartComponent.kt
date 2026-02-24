@@ -21,7 +21,7 @@ fun EmbededChartComponent(
                 setTouchEnabled(true)
                 setDragEnabled(true)
                 setScaleEnabled(true)
-                setPinchZoom(true)
+                setPinchZoom(false)
 
                 description.isEnabled = false
                 axisRight.isEnabled = true
@@ -46,6 +46,7 @@ fun EmbededChartComponent(
                 targetValue = state.destinationWeight,
                 movingAverage1 = state.movingAverage1,
                 movingAverage2 = state.movingAverage2,
+                maxLabels = 6,
             )
             chart.invalidate()
         }

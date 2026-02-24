@@ -32,7 +32,7 @@ fun UiEventConsumer(
             )
 
             is UiEvent.Info -> snackbarHostState.showSnackbar(event.asString(context))
-            is UiEvent.Success -> snackbarHostState.showSnackbar(event.asString(context))
+            is UiEvent.Message -> snackbarHostState.showSnackbar(event.message)
         }
     }
 }

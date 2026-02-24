@@ -20,6 +20,9 @@ interface UserProfileDao {
     @Query("DELETE FROM ${UserProfileEntity.TABLE}")
     suspend fun deleteAll()
 
+    @Query("SELECT EXISTS(SELECT 1 FROM ${UserProfileEntity.TABLE})")
+    suspend fun hasAny(): Boolean
+
 //    @Query("SELECT lang FROM ${UserProfileEntity.TABLE} WHERE id = 0 LIMIT 1")
 //    suspend fun getLang(): String?
 

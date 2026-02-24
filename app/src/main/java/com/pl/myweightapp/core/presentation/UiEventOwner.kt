@@ -37,3 +37,4 @@ suspend fun UiEventOwner.sendInfo(
     sendEvent(UiEvent.Info(resId, args.toList()))
 }
 
+suspend fun UiEventOwner.sendMessage(msg: String) = sendEvent(UiEvent.Message(msg))

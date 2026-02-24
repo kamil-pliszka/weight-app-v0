@@ -109,6 +109,7 @@ fun configureChart(
     targetValue: Float?,
     movingAverage1: Int? = null,
     movingAverage2: Int? = null,
+    maxLabels: Int? = null,
 ) {
     Log.d(TAG, "configureChart")
     if (totalMeasurements.isEmpty()) {
@@ -142,7 +143,7 @@ fun configureChart(
             setLabelCount(5, true)
             Log.d(TAG, "Set labelCount = 5")
         } else /*if (periodOnChartDays < 300)*/ {
-            setLabelCount((periodOnChartDays / 30).toInt(), true)
+            setLabelCount((periodOnChartDays / 30).toInt().coerceIn(null, maxLabels), true)
             Log.d(TAG, "Set labelCount to: ${(periodOnChartDays / 30).toInt()} -> $labelCount")
         }
     }

@@ -12,6 +12,8 @@ import com.pl.myweightapp.core.presentation.DefaultUiEventOwner
 import com.pl.myweightapp.core.presentation.UiEventOwner
 import com.pl.myweightapp.core.presentation.launchSafely
 import com.pl.myweightapp.core.presentation.sendInfo
+import com.pl.myweightapp.core.presentation.sendMessage
+import com.pl.myweightapp.data.backuo.BackupManager
 import com.pl.myweightapp.data.csv.CsvParseException
 import com.pl.myweightapp.data.csv.exportWeightCsv
 import com.pl.myweightapp.data.csv.getFileNameFromUri
@@ -40,6 +42,7 @@ data class UiState(
     val langTag: String = "",
     val langDisplayResId: Int? = null,
     val useEmbeddedChart: Boolean = false,
+    val visibleRestore: Boolean = false,
 )
 
 sealed interface Action {
@@ -52,6 +55,7 @@ sealed interface Action {
     object OnLanguageDismiss : Action
     data class OnLanguageChoose(val lang: String) : Action
     data class OnChangeUseEmbeddedChart(val embedded: Boolean) : Action
+    object OnTryToRestore: Action
 }
 
 @HiltViewModel
@@ -59,6 +63,7 @@ class SettingsViewModel @Inject constructor(
     private val appSettingsManager: AppSettingsManager,
     private val userProfileRepository: UserProfileRepository,
     private val weightMeasureRepository: WeightMeasureRepository,
+    private val backupManager: BackupManager,
     @param:ApplicationContext private val context: Context,
 ) : ViewModel(), UiEventOwner by DefaultUiEventOwner() {
     companion object {
@@ -81,9 +86,22 @@ class SettingsViewModel @Inject constructor(
                     it.copy(
                         langTag = settings.language,
                         langDisplayResId = langDisplayResId(settings.language),
-                        useEmbeddedChart = settings.embeddedChart
+                        useEmbeddedChart = settings.embeddedChart,
                     )
                 }
+                updateAvailableRestore()
+            }
+        }
+    }
+
+    private fun updateAvailableRestore() {
+        viewModelScope.launch {
+            val availableRestore = backupManager.isAvailableRestore()
+            Log.d(TAG, "isAvailableRestore = $availableRestore")
+            _state.update {
+                it.copy(
+                    visibleRestore = availableRestore,
+                )
             }
         }
     }
@@ -138,6 +156,8 @@ class SettingsViewModel @Inject constructor(
             is Action.OnChangeUseEmbeddedChart -> {
                 changeUseEmbeddedChart(action.embedded)
             }
+
+            Action.OnTryToRestore -> tryToRestore()
         }
     }
 
@@ -212,6 +232,7 @@ class SettingsViewModel @Inject constructor(
                 appSettingsManager.deleteAll()
                 deleteAppFiles()
                 sendInfo(R.string.settings_delete_all_success)
+                updateAvailableRestore()
             }
         }
     }
@@ -223,11 +244,13 @@ class SettingsViewModel @Inject constructor(
             Log.d(TAG, "Delete ${Constants.WEIGHT_CHART_FILENAME}")
             fileChart.delete()
         }
+        /*
         val fileProfile = File(context.filesDir, Constants.PROFILE_PHOTO_FILENAME)
         if (fileProfile.exists()) {
             Log.d(TAG, "Delete ${Constants.PROFILE_PHOTO_FILENAME}")
             fileProfile.delete()
         }
+        */
     }
 
     private fun setLanguage(tag: String) {
@@ -244,5 +267,16 @@ class SettingsViewModel @Inject constructor(
             appSettingsManager.updateEmbeddedChart(embeddedChart)
         }
     }
+
+
+    private fun tryToRestore() {
+        Log.d(TAG, "tryToRestore")
+        launchSafely {
+            val msg = backupManager.tryToRestoreBackup()
+            sendMessage(msg)
+            updateAvailableRestore()
+        }
+    }
+
 }
 

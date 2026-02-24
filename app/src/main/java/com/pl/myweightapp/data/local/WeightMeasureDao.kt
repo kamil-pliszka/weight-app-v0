@@ -7,7 +7,6 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
-import com.pl.myweightapp.core.domain.WeightUnit
 import kotlinx.coroutines.flow.Flow
 import java.math.BigDecimal
 
@@ -84,5 +83,9 @@ interface WeightMeasureDao {
         LIMIT 1
     """)
     fun observeById(id: Long): Flow<WeightMeasureEntity?>
+    @Query("""
+        SELECT EXISTS(SELECT 1 FROM ${WeightMeasureEntity.TABLE})
+    """)
+    suspend fun hasAny(): Boolean
 
 }

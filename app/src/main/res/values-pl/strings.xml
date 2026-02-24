@@ -33,10 +33,11 @@
     <string name="settings_csv_export">Eksport do CSV</string>
     <string name="settings_csv_import">Import z CSV</string>
     <string name="settings_reset">Usuwanie</string>
-    <string name="settings_delete_all_data">Usuń wszystkie dane</string>
+    <string name="settings_reset_backup">Usuwanie/Odzyskiwanie</string>
+    <string name="settings_delete_all_data">Usuń dane</string>
     <string name="settings_processing_csv_please_be_patient">Przetwarzam csv…, nie gorączkuj się</string>
-    <string name="settings_delete_all_data_question">Usuńąć wszystkie dane?</string>
-    <string name="settings_delete_all_data_description">Czy na pewno jesteś pewien że chcesz usunąć wszystkie dane? Ta operacja będzie nieodwracalna.</string>
+    <string name="settings_delete_all_data_question">Usuńąć dane?</string>
+    <string name="settings_delete_all_data_description">Czy na pewno jesteś pewien że chcesz usunąć dane?</string>
     <string name="settings_delete_all_data_delete_button">Usuń</string>
     <string name="profile_name">Imię</string>
     <string name="profile_age">Wiek</string>
@@ -87,11 +88,17 @@
     <string name="settings_csv_import_success">Pomyślnie zaimportowano %1$d wpisów</string>
     <string name="settings_csv_import_parsing_error">Błąd importu CSV: %1$s</string>
     <string name="settings_csv_import_error">Import nie powiódł się: %1$s</string>
-    <string name="settings_delete_all_success">Wszystkie dane zostały usunięte</string>
+    <string name="settings_delete_all_success">Dane zostały usunięte</string>
     <string name="settings_delete_all_error">Nie udało się usunąć danych: %1$s</string>
     <string name="settings_lang_error">Zapis nie powiodł się: %1$s</string>
     <string name="settings_dynamic_chart">Dynamiczny wykres</string>
     <string name="profile_incorrect_age">Nieprawidłowy wiek</string>
     <string name="profile_incorrect_height">Nieprawidłowy wzrost</string>
     <string name="profile_incorrect_weight">Nieprawidłowa waga</string>
+    <string name="settings_try_to_restore">Spróbuj odzyskać dane</string>
+    <string name="backup_measurement_records_already_exist_in_db">W bazie danych już istnieją zapisane pomiary.</string>
+    <string name="backup_profile_already_exist_in_db">Profil już jest zapisany w bazie danych.</string>
+    <string name="backup_no_backup_files">Brak plików zapasowych.</string>
+    <string name="backup_profile_photo_restored">Odzyskano zdjęcie profilowe</string>
+    <string name="backup_measuremets_restored">Odzyskano %1$d pomiarów</string>
 </resources>

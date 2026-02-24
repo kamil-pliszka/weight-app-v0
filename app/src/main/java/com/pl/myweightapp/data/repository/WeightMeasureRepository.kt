@@ -83,6 +83,10 @@ class WeightMeasureRepository(val weightMeasureDao: WeightMeasureDao) {
         weightMeasureDao.deleteAll()
     }
 
+    suspend fun hasAny(): Boolean = withContext(Dispatchers.IO) {
+        weightMeasureDao.hasAny()
+    }
+
 }
 
 fun sortWeightMeasureHistory(history: List<WeightMeasureEntity>): List<WeightMeasureEntity> {

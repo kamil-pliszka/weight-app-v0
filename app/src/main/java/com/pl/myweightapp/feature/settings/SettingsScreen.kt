@@ -150,10 +150,24 @@ fun SettingsScreen(
                 Text(stringResource(R.string.settings_csv_import))
             }
 
-            ListItem(
-                headlineContent = { Text(stringResource(R.string.settings_reset)) },
-                colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-            )
+            if (state.visibleRestore) {
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.settings_reset_backup)) },
+                    colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                )
+                DataRow(Modifier.clickable {
+                    onAction(Action.OnTryToRestore)
+                }) {
+                    Text(
+                        stringResource(R.string.settings_try_to_restore),
+                    )
+                }
+            } else {
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.settings_reset)) },
+                    colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                )
+            }
             DataRow(Modifier.clickable {
                 onAction(Action.OnDeleteAllDataClick)
             }) {
@@ -162,7 +176,6 @@ fun SettingsScreen(
                     color = MaterialTheme.colorScheme.error
                 )
             }
-
         }
     }
     if (state.isCsvProcessing) {
