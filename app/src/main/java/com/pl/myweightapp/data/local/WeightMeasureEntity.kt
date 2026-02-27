@@ -2,7 +2,7 @@ package com.pl.myweightapp.data.local
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.pl.myweightapp.core.domain.WeightUnit
+import com.pl.myweightapp.domain.WeightUnit
 import java.math.BigDecimal
 import java.time.Instant
 

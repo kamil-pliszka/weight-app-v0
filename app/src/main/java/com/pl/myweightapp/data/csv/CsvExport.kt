@@ -4,43 +4,31 @@ import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.util.Log
-import com.pl.myweightapp.data.local.WeightMeasureEntity
-import com.pl.myweightapp.data.repository.WeightMeasureRepository
-import com.pl.myweightapp.data.repository.sortWeightMeasureHistory
+import com.pl.myweightapp.domain.WeightMeasure
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 private const val TAG = "CsvExport"
 suspend fun exportWeightCsv(
-    repo: WeightMeasureRepository,
+    history: List<WeightMeasure>,
     context: Context,
     uri: Uri,
     onProgressChange: (Float) -> Unit
 ): Int = withContext(Dispatchers.IO) {
-    val historyEntities = sortWeightMeasureHistory(repo.findWeightMeasureHistory())
-    exportWeightCsv(historyEntities, context, uri, onProgressChange)
-}
-suspend fun exportWeightCsv(
-    history: List<WeightMeasureEntity>,
-    context: Context,
-    uri: Uri,
-    onProgressChange: (Float) -> Unit
-): Int = withContext(Dispatchers.IO) {
-    val historyEntities = sortWeightMeasureHistory(history)
-    Log.d(TAG,"history entities : ${historyEntities.size}")
+    Log.d(TAG,"history entities : ${history.size}")
     context.contentResolver.openOutputStream(uri)?.use { output ->
         val writer = output.bufferedWriter()
         writer.write("#Weight Date,Weight Measurement,Weight Unit\n")
-        historyEntities.forEachIndexed { idx, entity ->
+        history.forEachIndexed { idx, entity ->
             val line =
                 "${entity.date},${entity.weight.toPlainString()},${entity.unit.name.lowercase()}"
             writer.write(line)
             writer.write("\n")
-            onProgressChange((idx + 1).toFloat() / historyEntities.size)
+            onProgressChange((idx + 1).toFloat() / history.size)
         }
         writer.flush()
     }
-    historyEntities.size //return
+    history.size //return
 }
 
 fun getFileNameFromUri(context: Context, uri: Uri): String? {

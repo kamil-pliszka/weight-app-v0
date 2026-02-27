@@ -37,3 +37,11 @@ fun Long.millisToLocalDate(): LocalDate {
         .atZone(ZoneId.systemDefault()) // strefa urządzenia
         .toLocalDate()
 }
+
+fun Long.millisToDaysFloat(): Float {
+    return (this / 86_400_000.0).toFloat()
+}
+
+fun Float.daysToMillis(): Long {
+    return kotlin.math.round(this * 86_400_000.0).toLong()
+}

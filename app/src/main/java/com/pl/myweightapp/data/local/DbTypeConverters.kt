@@ -1,7 +1,9 @@
 package com.pl.myweightapp.data.local
 
 import androidx.room.TypeConverter
-import com.pl.myweightapp.core.domain.WeightUnit
+import com.pl.myweightapp.domain.Gender
+import com.pl.myweightapp.domain.HeightUnit
+import com.pl.myweightapp.domain.WeightUnit
 import java.math.BigDecimal
 import java.time.Instant
 

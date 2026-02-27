@@ -3,7 +3,7 @@ package com.pl.myweightapp.core.ui
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.pl.myweightapp.R
-import com.pl.myweightapp.core.domain.WeightUnit
+import com.pl.myweightapp.domain.WeightUnit
 
 enum class WeightUnitUi { KG, LB }
 

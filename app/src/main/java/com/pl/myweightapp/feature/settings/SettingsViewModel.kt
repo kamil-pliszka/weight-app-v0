@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.pl.myweightapp.BuildConfig
 import com.pl.myweightapp.R
 import com.pl.myweightapp.core.Constants
 import com.pl.myweightapp.core.presentation.DefaultUiEventOwner
@@ -13,14 +14,14 @@ import com.pl.myweightapp.core.presentation.UiEventOwner
 import com.pl.myweightapp.core.presentation.launchSafely
 import com.pl.myweightapp.core.presentation.sendInfo
 import com.pl.myweightapp.core.presentation.sendMessage
-import com.pl.myweightapp.data.backuo.BackupManager
 import com.pl.myweightapp.data.csv.CsvParseException
 import com.pl.myweightapp.data.csv.exportWeightCsv
 import com.pl.myweightapp.data.csv.getFileNameFromUri
 import com.pl.myweightapp.data.csv.importWeightCsv
-import com.pl.myweightapp.data.preferences.AppSettingsManager
-import com.pl.myweightapp.data.repository.UserProfileRepository
-import com.pl.myweightapp.data.repository.WeightMeasureRepository
+import com.pl.myweightapp.domain.AppSettingsService
+import com.pl.myweightapp.domain.BackupService
+import com.pl.myweightapp.domain.UserProfileRepository
+import com.pl.myweightapp.domain.WeightMeasureRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -30,6 +31,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 @Immutable
@@ -43,6 +45,8 @@ data class UiState(
     val langDisplayResId: Int? = null,
     val useEmbeddedChart: Boolean = false,
     val visibleRestore: Boolean = false,
+    val appVersionDate: String = "",
+    val appVersionHash: String = "",
 )
 
 sealed interface Action {
@@ -55,23 +59,34 @@ sealed interface Action {
     object OnLanguageDismiss : Action
     data class OnLanguageChoose(val lang: String) : Action
     data class OnChangeUseEmbeddedChart(val embedded: Boolean) : Action
-    object OnTryToRestore: Action
+    object OnTryToRestore : Action
 }
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-    private val appSettingsManager: AppSettingsManager,
+    private val appSettingsService: AppSettingsService,
     private val userProfileRepository: UserProfileRepository,
     private val weightMeasureRepository: WeightMeasureRepository,
-    private val backupManager: BackupManager,
+    private val backupService: BackupService,
     @param:ApplicationContext private val context: Context,
 ) : ViewModel(), UiEventOwner by DefaultUiEventOwner() {
     companion object {
-        private const val TAG = "SettingsVM"
+        private val TAG = object {}.javaClass.enclosingClass?.simpleName
     }
 
-    private val _state = MutableStateFlow(UiState())
+    private val _state = MutableStateFlow(prepareInitialUiState())
     val state = _state.asStateFlow()
+
+    private fun prepareInitialUiState(): UiState {
+        val versionHash = BuildConfig.VERSION_NAME
+        val instant = java.time.Instant.ofEpochSecond(BuildConfig.VERSION_CODE.toLong())
+        val dateTime = instant.atZone(java.time.ZoneId.systemDefault())
+        val versionDateStr = DateTimeFormatter.ofPattern("yyyyMMdd-HHmm").format(dateTime)
+        return UiState(
+            appVersionDate = versionDateStr,
+            appVersionHash = versionHash.substring(0, 3)
+        )
+    }
 
 
     init {
@@ -80,7 +95,7 @@ class SettingsViewModel @Inject constructor(
 
     private fun observeSettings() {
         viewModelScope.launch {
-            appSettingsManager.settingsFlow.collect { settings ->
+            appSettingsService.settingsFlow.collect { settings ->
                 Log.d(TAG, "observeSettings: $settings")
                 _state.update {
                     it.copy(
@@ -96,7 +111,7 @@ class SettingsViewModel @Inject constructor(
 
     private fun updateAvailableRestore() {
         viewModelScope.launch {
-            val availableRestore = backupManager.isAvailableRestore()
+            val availableRestore = backupService.isAvailableRestore()
             Log.d(TAG, "isAvailableRestore = $availableRestore")
             _state.update {
                 it.copy(
@@ -190,9 +205,10 @@ class SettingsViewModel @Inject constructor(
                 val mime = context.contentResolver.getType(uri)
                 Log.d(TAG, "mime: $mime")
                 try {
-                    val entriesCount = importWeightCsv(weightMeasureRepository, context, uri) { progress ->
-                        _state.update { it.copy(csvProgress = progress) }
-                    }
+                    val entriesCount =
+                        importWeightCsv(weightMeasureRepository, context, uri) { progress ->
+                            _state.update { it.copy(csvProgress = progress) }
+                        }
                     sendInfo(R.string.settings_csv_import_success, entriesCount)
                 } catch (e: CsvParseException) {
                     sendInfo(R.string.settings_csv_import_parsing_error, e.message ?: "")
@@ -209,7 +225,11 @@ class SettingsViewModel @Inject constructor(
                 val filename = getFileNameFromUri(context, uri)
                 Log.d(TAG, "mime: $mime, filename: $filename")
                 val entriesCount =
-                    exportWeightCsv(weightMeasureRepository, context, uri) { progress ->
+                    exportWeightCsv(
+                        weightMeasureRepository.findWeightMeasureHistory(),
+                        context,
+                        uri
+                    ) { progress ->
                         _state.update { it.copy(csvProgress = progress) }
                     }
                 sendInfo(
@@ -229,7 +249,7 @@ class SettingsViewModel @Inject constructor(
                 //usunięcie profilu
                 userProfileRepository.deleteAll()
                 //usunięcie ustawień
-                appSettingsManager.deleteAll()
+                appSettingsService.deleteAll()
                 deleteAppFiles()
                 sendInfo(R.string.settings_delete_all_success)
                 updateAvailableRestore()
@@ -256,7 +276,7 @@ class SettingsViewModel @Inject constructor(
     private fun setLanguage(tag: String) {
         Log.d(TAG, "setLanguage to: $tag")
         launchSafely {
-            appSettingsManager.changeLanguage(tag)
+            appSettingsService.changeLanguage(tag)
         }
     }
 
@@ -264,7 +284,7 @@ class SettingsViewModel @Inject constructor(
     private fun changeUseEmbeddedChart(embeddedChart: Boolean) {
         Log.d(TAG, "changeUseEmbeddeChart to: $embeddedChart")
         launchSafely {
-            appSettingsManager.updateEmbeddedChart(embeddedChart)
+            appSettingsService.updateEmbeddedChart(embeddedChart)
         }
     }
 
@@ -272,7 +292,7 @@ class SettingsViewModel @Inject constructor(
     private fun tryToRestore() {
         Log.d(TAG, "tryToRestore")
         launchSafely {
-            val msg = backupManager.tryToRestoreBackup()
+            val msg = backupService.tryToRestoreBackup()
             sendMessage(msg)
             updateAvailableRestore()
         }

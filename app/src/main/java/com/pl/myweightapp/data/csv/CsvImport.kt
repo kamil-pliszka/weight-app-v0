@@ -3,10 +3,10 @@ package com.pl.myweightapp.data.csv
 import android.content.Context
 import android.net.Uri
 import android.util.Log
-import com.pl.myweightapp.core.domain.WeightUnit
 import com.pl.myweightapp.core.util.toLocalDate
-import com.pl.myweightapp.data.local.WeightMeasureEntity
-import com.pl.myweightapp.data.repository.WeightMeasureRepository
+import com.pl.myweightapp.domain.WeightMeasure
+import com.pl.myweightapp.domain.WeightMeasureRepository
+import com.pl.myweightapp.domain.WeightUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -34,15 +34,15 @@ suspend fun importWeightCsv(
             list.sortedBy { it.id } // rosnąco po id
         }
     Log.d(TAG,"groupped by date size : ${existingEntitiesByDate.size}")
-    val toInsert = mutableListOf<WeightMeasureEntity>()
-    val toUpdate = mutableListOf<WeightMeasureEntity>()
+    val toInsert = mutableListOf<WeightMeasure>()
+    val toUpdate = mutableListOf<WeightMeasure>()
 
     entriesCsv.forEachIndexed { idx, csvEntry ->
         val existingOnDate = existingEntitiesByDate[csvEntry.timestamp.toLocalDate()]
         if (existingOnDate == null) {
             Log.d(TAG,"Insert measure on date: ${csvEntry.timestamp}, weight: ${csvEntry.value}, idx = $idx")
             toInsert.add(
-                WeightMeasureEntity(
+                WeightMeasure(
                     date = csvEntry.timestamp,
                     weight = csvEntry.value,
                     unit = csvEntry.unit.toEntityWeightUnit()
@@ -68,8 +68,8 @@ suspend fun importWeightCsv(
 
 private fun findEntityOnDate(
     csvEntry: WeightEntryCsv,
-    existingOnDate: List<WeightMeasureEntity>
-): WeightMeasureEntity {
+    existingOnDate: List<WeightMeasure>
+): WeightMeasure {
     assert(existingOnDate.isNotEmpty())
     if (existingOnDate.size == 1) {
         return existingOnDate.first()

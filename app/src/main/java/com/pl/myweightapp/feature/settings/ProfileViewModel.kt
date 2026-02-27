@@ -11,17 +11,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pl.myweightapp.R
 import com.pl.myweightapp.core.Constants.PROFILE_PHOTO_FILENAME
-import com.pl.myweightapp.core.domain.WeightUnit
 import com.pl.myweightapp.core.presentation.DefaultUiEventOwner
 import com.pl.myweightapp.core.presentation.UiEventOwner
 import com.pl.myweightapp.core.presentation.launchSafely
 import com.pl.myweightapp.core.presentation.sendInfo
 import com.pl.myweightapp.core.util.kgToLbs
 import com.pl.myweightapp.core.util.lbsToKg
-import com.pl.myweightapp.data.local.Gender
-import com.pl.myweightapp.data.local.HeightUnit
-import com.pl.myweightapp.data.local.UserProfileEntity
-import com.pl.myweightapp.data.repository.UserProfileRepository
+import com.pl.myweightapp.domain.Gender
+import com.pl.myweightapp.domain.HeightUnit
+import com.pl.myweightapp.domain.UserProfile
+import com.pl.myweightapp.domain.UserProfileRepository
+import com.pl.myweightapp.domain.WeightUnit
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -87,7 +87,7 @@ class ProfileViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
 ): ViewModel(), UiEventOwner by DefaultUiEventOwner() {
     companion object {
-        private const val TAG = "ProfileVM"
+        private val TAG = object {}.javaClass.enclosingClass?.simpleName
     }
 
     private val _state = MutableStateFlow(ProfileUiState())
@@ -121,7 +121,7 @@ class ProfileViewModel @Inject constructor(
     }
 
     private fun observeProfile() {
-        repository.profile
+        repository.observeProfile()
             .onEach { profile ->
                 _state.update { it.copy(isLoading = false) }
                 if (profile == null) return@onEach
@@ -294,8 +294,7 @@ class ProfileViewModel @Inject constructor(
         }
         //_state.update { it.copy(photoPath = finalPhoto, tmpPhotoPath = null) }
         Log.d(TAG, "Final photo: $finalPhoto")
-        val entity = UserProfileEntity(
-            id = 0,
+        val userProfile = UserProfile(
             name = s.name,
             age = age,
             height = height,
@@ -311,7 +310,7 @@ class ProfileViewModel @Inject constructor(
         )
 
         withSaving {
-            repository.save(entity)
+            repository.save(userProfile)
             _state.update {
                 it.copy(isDirty = false)
             }

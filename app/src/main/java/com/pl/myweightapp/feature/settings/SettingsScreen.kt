@@ -51,7 +51,7 @@ fun SettingsScreen(
     onAction: (Action) -> Unit,
     profileState: ProfileUiState,
     profileOnAction: (ProfileAction) -> Unit,
-    ) {
+) {
     //val state by viewModel.state.collectAsStateWithLifecycle()
 
     val launcherChooseFileImport = rememberLauncherForActivityResult(
@@ -106,11 +106,19 @@ fun SettingsScreen(
             DataRow(Modifier.clickable {
                 onAction(Action.OnLanguageClick)
             }) {
-                Text(modifier = Modifier.weight(1f), text = stringResource(R.string.settings_language))
-                Text(modifier = Modifier.weight(1f), text = state.langDisplayResId?.let { stringResource(it) } ?: "–")
+                Text(
+                    modifier = Modifier.weight(1f),
+                    text = stringResource(R.string.settings_language)
+                )
+                Text(
+                    modifier = Modifier.weight(1f),
+                    text = state.langDisplayResId?.let { stringResource(it) } ?: "–")
             }
             DataRow {
-                Text(modifier = Modifier.weight(1f), text = stringResource(R.string.settings_dynamic_chart))
+                Text(
+                    modifier = Modifier.weight(1f),
+                    text = stringResource(R.string.settings_dynamic_chart)
+                )
 //                Switch(
 //                    checked = state.useEmbeddedChart,
 //                    onCheckedChange = { checked ->
@@ -119,9 +127,10 @@ fun SettingsScreen(
 //                        )
 //                    }
 //                )
-                Checkbox(modifier = Modifier
-                    .weight(1f)
-                    .wrapContentWidth(Alignment.Start),
+                Checkbox(
+                    modifier = Modifier
+                        .weight(1f)
+                        .wrapContentWidth(Alignment.Start),
                     checked = state.useEmbeddedChart,
                     onCheckedChange = { checked ->
                         onAction(
@@ -175,6 +184,20 @@ fun SettingsScreen(
                     stringResource(R.string.settings_delete_all_data),
                     color = MaterialTheme.colorScheme.error
                 )
+            }
+
+            ListItem(
+                headlineContent = {
+                    Row {
+                        Text(stringResource(R.string.settings_version))
+                        Text(" : ")
+                        Text("${state.appVersionDate}-${state.appVersionHash}")
+                    }
+                },
+                colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            )
+            DataRow {
+                Text("")//pusty na koniec, dla FAB
             }
         }
     }

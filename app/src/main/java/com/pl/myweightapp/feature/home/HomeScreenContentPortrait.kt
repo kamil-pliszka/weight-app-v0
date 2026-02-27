@@ -37,6 +37,8 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.pl.myweightapp.R
 import com.pl.myweightapp.core.ui.EnumDropdownButton
+import com.pl.myweightapp.core.ui.label
+import com.pl.myweightapp.domain.DisplayPeriod
 
 private const val TAG = "HomeScreenPortrait"
 
@@ -124,7 +126,7 @@ fun LegendTop(modifier: Modifier = Modifier, state: UiState) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceAround,
         ) {
-            val unitStr = state.unit.name.lowercase()
+            val unitStr = state.unit.label()
             Column(horizontalAlignment = CenterHorizontally) {
                 Text(stringResource(R.string.home_legend_start))
                 Text("${state.startWeight?.let { "%.1f".format(it) } ?: "–"} $unitStr")
@@ -156,7 +158,7 @@ fun LegendBottom(modifier: Modifier = Modifier, state: UiState) {
         verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        val unitStr = state.unit.name.lowercase()
+        val unitStr = state.unit.label()
         val periodStr = when (state.period) {
             DisplayPeriod.ALL -> ""
             else -> state.period.label()

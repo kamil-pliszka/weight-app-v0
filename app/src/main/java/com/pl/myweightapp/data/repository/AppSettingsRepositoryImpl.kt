@@ -1,8 +1,8 @@
 package com.pl.myweightapp.data.repository
 
-import com.pl.myweightapp.core.domain.AppSettings
-import com.pl.myweightapp.core.domain.AppSettingsRepository
 import com.pl.myweightapp.data.preferences.AppSettingsDataSource
+import com.pl.myweightapp.domain.AppSettings
+import com.pl.myweightapp.domain.AppSettingsRepository
 import kotlinx.coroutines.flow.Flow
 
 class AppSettingsRepositoryImpl(

@@ -3,12 +3,12 @@ package com.pl.myweightapp.feature.addedit
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.pl.myweightapp.core.domain.WeightUnit
 import com.pl.myweightapp.core.presentation.DefaultUiEventOwner
 import com.pl.myweightapp.core.presentation.UiEventOwner
 import com.pl.myweightapp.core.presentation.launchSafely
 import com.pl.myweightapp.core.util.toInstant
-import com.pl.myweightapp.data.repository.WeightMeasureRepository
+import com.pl.myweightapp.domain.WeightMeasureRepository
+import com.pl.myweightapp.domain.WeightUnit
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -48,7 +48,7 @@ class AddMeasureViewModel @Inject constructor(
     private val repository: WeightMeasureRepository,
 ) : ViewModel(), UiEventOwner by DefaultUiEventOwner() {
     companion object {
-        private const val TAG = "AddMeasureVM"
+        private val TAG = object {}.javaClass.enclosingClass?.simpleName
     }
 
     private val _state = MutableStateFlow(AddMeasureState())

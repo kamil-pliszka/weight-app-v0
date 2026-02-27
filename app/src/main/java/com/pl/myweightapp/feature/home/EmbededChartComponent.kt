@@ -30,22 +30,10 @@ fun EmbededChartComponent(
             }
         },
         update = { chart ->
-            val history = state.weightHistory.reversed()
-            val startIdx = state.periodStartEntity?.let {
-                history.indexOf(it)
-            } ?: 0
-            val measurements = prepareWeightMeasurements(
-                history,
-                state.unit,
-            )
             configureChart(
-                context = context,
                 chart = chart,
-                totalMeasurements = measurements,
-                startIdx = startIdx,
-                targetValue = state.destinationWeight,
-                movingAverage1 = state.movingAverage1,
-                movingAverage2 = state.movingAverage2,
+                chartData = state.chartData,
+                chartLabels = state.chartLabels,
                 maxLabels = 6,
             )
             chart.invalidate()

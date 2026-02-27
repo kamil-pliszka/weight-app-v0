@@ -8,6 +8,29 @@ plugins {
     alias(libs.plugins.hilt)
 }
 
+fun runGitCommand(vararg args: String): String {
+    return try {
+        val process = ProcessBuilder("git", *args)
+            .redirectErrorStream(true)
+            .start()
+        process.inputStream.bufferedReader().use { it.readText().trim() }
+    } catch (e: Exception) {
+        ""
+    }
+}
+
+fun gitCommitHash(): String =
+    runGitCommand("rev-parse", "--short=8", "HEAD")
+        .ifBlank { "nogit" }
+
+fun gitCommitEpoch(): String =
+    runGitCommand("log", "-1", "--format=%ct")
+        .ifBlank { "0" }
+
+val gitVersionName = "${gitCommitEpoch()}-${gitCommitHash()}"
+
+
+
 val localProperties = Properties()
 val localPropertiesFile = rootProject.file("local.properties")
 if (localPropertiesFile.exists()) {
@@ -25,10 +48,18 @@ android {
         applicationId = "com.pl.myweightapp"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        //versionCode = 1
+        //versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        versionName = gitCommitHash()
+        versionCode = gitCommitEpoch()
+            .toLongOrNull()
+            ?.coerceAtMost(Int.MAX_VALUE.toLong())
+            ?.toInt()
+            ?: 1
+        buildConfigField("String", "APP_VERSION_FULL", "\"$gitVersionName\"")
     }
 
     buildTypes {

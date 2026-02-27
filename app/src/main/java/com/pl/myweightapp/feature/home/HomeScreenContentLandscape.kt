@@ -43,6 +43,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.pl.myweightapp.R
 import com.pl.myweightapp.core.ui.EnumDropdownButton
+import com.pl.myweightapp.core.ui.label
+import com.pl.myweightapp.domain.DisplayPeriod
 
 private const val TAG = "HomeScreenLandscape"
 
@@ -189,7 +191,7 @@ fun LegendVertical(
             alignment = Alignment.CenterVertically
         ),
     ) {
-        val unitStr = state.unit.name.lowercase()
+        val unitStr = state.unit.label()
         val periodStr = when (state.period) {
             DisplayPeriod.ALL -> ""
             else -> state.period.label()

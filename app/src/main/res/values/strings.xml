@@ -101,4 +101,5 @@
     <string name="backup_no_backup_files">There are no backup files, sorry.</string>
     <string name="backup_profile_photo_restored">Profile photo restored</string>
     <string name="backup_measuremets_restored">Successfuly restored %1$d measuremets</string>
+    <string name="settings_version">Version</string>
 </resources>

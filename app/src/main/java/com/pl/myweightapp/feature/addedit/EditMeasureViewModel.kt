@@ -12,7 +12,7 @@ import com.pl.myweightapp.core.presentation.sendInfo
 import com.pl.myweightapp.core.ui.WeightUnitUi
 import com.pl.myweightapp.core.ui.toWeightUnit
 import com.pl.myweightapp.core.ui.toWeightUnitUi
-import com.pl.myweightapp.data.repository.WeightMeasureRepository
+import com.pl.myweightapp.domain.WeightMeasureRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -64,7 +64,7 @@ class EditMeasureViewModel @Inject constructor(
     }
 
     companion object {
-        private const val TAG = "EditMeasureVM"
+        private val TAG = object {}.javaClass.enclosingClass?.simpleName
     }
 
     private val _state = MutableStateFlow<EditMeasureUiState>(EditMeasureUiState.Loading)

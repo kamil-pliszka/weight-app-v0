@@ -6,7 +6,7 @@ import androidx.compose.ui.graphics.Color
 import com.pl.myweightapp.core.ui.WeightUnitUi
 import com.pl.myweightapp.core.ui.toWeightUnitUi
 import com.pl.myweightapp.core.util.toDateString
-import com.pl.myweightapp.data.local.WeightMeasureEntity
+import com.pl.myweightapp.domain.WeightMeasure
 import java.math.BigDecimal
 import java.time.Instant
 import java.util.Locale
@@ -58,7 +58,7 @@ fun BigDecimal.toDisplayableNumberWithSign() =
 
 
 
-fun WeightMeasureEntity.toWeightMeasureUi(change: BigDecimal? = null): WieghtMeasureUi {
+fun WeightMeasure.toWeightMeasureUi(change: BigDecimal? = null): WieghtMeasureUi {
     return WieghtMeasureUi(
         id = id,
         date = date.toDisplayableInstant(),

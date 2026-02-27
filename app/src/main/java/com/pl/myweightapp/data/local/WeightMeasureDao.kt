@@ -70,10 +70,11 @@ interface WeightMeasureDao {
     suspend fun findLastWeightMeasureAndUnit(): LastWeightMeasure?
     @Query("""
         SELECT * FROM ${WeightMeasureEntity.TABLE}
+        ORDER BY date DESC, id DESC
     """)
     suspend fun findWeightMeasureHistory(): List<WeightMeasureEntity>
 
-    @Query("SELECT * FROM ${WeightMeasureEntity.TABLE}")
+    @Query("SELECT * FROM ${WeightMeasureEntity.TABLE} ORDER BY date DESC, id DESC")
     fun observeWeightMeasureHistory(): Flow<List<WeightMeasureEntity>>
 
     @Query("""

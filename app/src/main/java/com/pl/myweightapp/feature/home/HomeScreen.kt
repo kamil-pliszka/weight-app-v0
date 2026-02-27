@@ -7,6 +7,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.pl.myweightapp.R
+import com.pl.myweightapp.domain.DisplayPeriod
 
 @Preview(name = "processing")
 @Composable

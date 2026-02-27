@@ -7,7 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import com.pl.myweightapp.core.presentation.UiEvent
 import com.pl.myweightapp.core.presentation.asString
-import com.pl.myweightapp.core.presentation.util.observeAsEvents
+import com.pl.myweightapp.core.presentation.util.ObserveAsEvents
 import kotlinx.coroutines.flow.Flow
 
 @Composable
@@ -19,7 +19,7 @@ fun UiEventConsumer(
 ) {
     //val messageErrorPrefix = stringResource(R.string.error_msg_prefix)
     val context = LocalContext.current // <--- tutaj masz Context
-    observeAsEvents(events, key1, key2) { event ->
+    ObserveAsEvents(events, key1, key2) { event ->
         Log.d("ShowUiEventComponent", "got event: $event")
         when (event) {
             is UiEvent.Error -> {

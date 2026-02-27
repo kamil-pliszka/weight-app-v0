@@ -101,4 +101,5 @@
     <string name="backup_no_backup_files">Brak plików zapasowych.</string>
     <string name="backup_profile_photo_restored">Odzyskano zdjęcie profilowe</string>
     <string name="backup_measuremets_restored">Odzyskano %1$d pomiarów</string>
+    <string name="settings_version">Wersja</string>
 </resources>

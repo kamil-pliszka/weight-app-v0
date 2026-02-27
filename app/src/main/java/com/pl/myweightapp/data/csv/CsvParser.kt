@@ -10,12 +10,6 @@ import java.time.LocalDate
 import java.time.ZoneId
 
 class CsvParseException(message: String) : Exception(message)
-enum class WeightUnitCsv { KG, LB }
-data class WeightEntryCsv(
-    val timestamp: Instant,
-    val value: BigDecimal,
-    val unit: WeightUnitCsv
-)
 
 fun parseWeightCsv(
     context: Context,

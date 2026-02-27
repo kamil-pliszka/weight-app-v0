@@ -45,7 +45,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import com.pl.myweightapp.R
-import com.pl.myweightapp.data.local.Gender
+import com.pl.myweightapp.domain.Gender
 import java.io.File
 
 private const val TAG = "ProfileComponent"

@@ -9,9 +9,8 @@ import com.pl.myweightapp.core.presentation.DefaultUiEventOwner
 import com.pl.myweightapp.core.presentation.UiEventOwner
 import com.pl.myweightapp.core.presentation.launchSafely
 import com.pl.myweightapp.core.presentation.sendInfo
-import com.pl.myweightapp.data.local.WeightMeasureEntity
-import com.pl.myweightapp.data.repository.WeightMeasureRepository
-import com.pl.myweightapp.data.repository.sortWeightMeasureHistory
+import com.pl.myweightapp.domain.WeightMeasure
+import com.pl.myweightapp.domain.WeightMeasureRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -56,7 +55,7 @@ class HistoryViewModel @Inject constructor(
     val repository: WeightMeasureRepository,
 ): ViewModel(), UiEventOwner by DefaultUiEventOwner() {
     companion object {
-        private const val TAG = "HistoryVM"
+        private val TAG = object {}.javaClass.enclosingClass?.simpleName
     }
 
     private val _state = MutableStateFlow(HistoryUiState())
@@ -146,8 +145,7 @@ class HistoryViewModel @Inject constructor(
 //        }
 //    }
 
-    private fun convertToHistoryUi(history: List<WeightMeasureEntity>): List<WieghtMeasureUi> {
-        val historySorted = sortWeightMeasureHistory(history)
+    private fun convertToHistoryUi(historySorted: List<WeightMeasure>): List<WieghtMeasureUi> {
         return historySorted.mapIndexed { idx, elem ->
             val prevWeight = historySorted.getOrNull(idx + 1)?.weight
             val change = prevWeight?.let { elem.weight - it }

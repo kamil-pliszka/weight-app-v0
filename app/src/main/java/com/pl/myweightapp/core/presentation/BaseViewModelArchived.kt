@@ -19,7 +19,7 @@ import kotlin.coroutines.cancellation.CancellationException
  */
 abstract class BaseViewModel : ViewModel() {
     companion object {
-        private const val TAG = "BaseVM"
+        private val TAG = object {}.javaClass.enclosingClass?.simpleName
     }
 
     //output events

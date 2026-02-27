@@ -25,9 +25,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.pl.myweightapp.R
-import com.pl.myweightapp.core.domain.WeightUnit
 import com.pl.myweightapp.core.util.toDateString
 import com.pl.myweightapp.core.util.toMillis
+import com.pl.myweightapp.domain.WeightUnit
 import java.math.BigDecimal
 import java.time.LocalDate
 
