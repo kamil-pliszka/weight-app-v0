@@ -1,7 +1,7 @@
 package com.pl.myweightapp.data.repository
 
-import com.pl.myweightapp.domain.NavigationBadges
 import com.pl.myweightapp.domain.NavigationBadgeRepository
+import com.pl.myweightapp.domain.NavigationBadges
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow

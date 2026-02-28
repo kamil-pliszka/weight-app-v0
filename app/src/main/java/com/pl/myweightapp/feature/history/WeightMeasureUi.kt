@@ -3,10 +3,10 @@ package com.pl.myweightapp.feature.history
 import android.icu.text.NumberFormat
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
-import com.pl.myweightapp.core.ui.WeightUnitUi
-import com.pl.myweightapp.core.ui.toWeightUnitUi
 import com.pl.myweightapp.core.util.toDateString
 import com.pl.myweightapp.domain.WeightMeasure
+import com.pl.myweightapp.feature.common.ui.WeightUnitUi
+import com.pl.myweightapp.feature.common.ui.toWeightUnitUi
 import java.math.BigDecimal
 import java.time.Instant
 import java.util.Locale

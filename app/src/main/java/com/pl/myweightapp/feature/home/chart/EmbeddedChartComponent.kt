@@ -1,4 +1,4 @@
-package com.pl.myweightapp.feature.home
+package com.pl.myweightapp.feature.home.chart
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -7,11 +7,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import com.github.mikephil.charting.charts.LineChart
 import com.github.mikephil.charting.components.Legend
-import com.pl.myweightapp.feature.home.chart.configureChart
+import com.pl.myweightapp.feature.home.HomeScreenUiState
 
 @Composable
-fun EmbededChartComponent(
-    state: UiState,
+fun EmbeddedChartComponent(
+    state: HomeScreenUiState,
 ) {
     val context = LocalContext.current
     AndroidView(
@@ -31,9 +31,9 @@ fun EmbededChartComponent(
         },
         update = { chart ->
             configureChart(
+                context = context,
                 chart = chart,
                 chartData = state.chartData,
-                chartLabels = state.chartLabels,
                 maxLabels = 6,
             )
             chart.invalidate()

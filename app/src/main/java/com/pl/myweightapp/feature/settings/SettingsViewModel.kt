@@ -1,36 +1,27 @@
 package com.pl.myweightapp.feature.settings
 
-import android.content.Context
-import android.net.Uri
 import android.util.Log
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pl.myweightapp.BuildConfig
 import com.pl.myweightapp.R
-import com.pl.myweightapp.core.Constants
-import com.pl.myweightapp.core.presentation.DefaultUiEventOwner
-import com.pl.myweightapp.core.presentation.UiEventOwner
-import com.pl.myweightapp.core.presentation.launchSafely
-import com.pl.myweightapp.core.presentation.sendInfo
-import com.pl.myweightapp.core.presentation.sendMessage
-import com.pl.myweightapp.data.csv.CsvParseException
-import com.pl.myweightapp.data.csv.exportWeightCsv
-import com.pl.myweightapp.data.csv.getFileNameFromUri
-import com.pl.myweightapp.data.csv.importWeightCsv
 import com.pl.myweightapp.domain.AppSettingsService
 import com.pl.myweightapp.domain.BackupService
-import com.pl.myweightapp.domain.UserProfileRepository
-import com.pl.myweightapp.domain.WeightMeasureRepository
+import com.pl.myweightapp.domain.csv.CsvParseException
+import com.pl.myweightapp.domain.csv.CsvService
+import com.pl.myweightapp.feature.common.DefaultUiEventOwner
+import com.pl.myweightapp.feature.common.UiEventOwner
+import com.pl.myweightapp.feature.common.launchSafely
+import com.pl.myweightapp.feature.common.sendInfo
+import com.pl.myweightapp.feature.common.sendMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.io.File
+import java.io.InputStream
+import java.io.OutputStream
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
@@ -50,8 +41,8 @@ data class UiState(
 )
 
 sealed interface Action {
-    data class OnCsvImport(val uri: Uri) : Action
-    data class OnCsvExport(val uri: Uri) : Action
+    data class OnCsvImport(val input: InputStream) : Action
+    data class OnCsvExport(val output: OutputStream, val filename: String?) : Action
     object OnDeleteAllDataClick : Action      // klik przycisku
     object OnDeleteAllDataConfirm : Action    // potwierdzenie
     object OnDeleteAllDataCancel : Action     // anulowanie
@@ -65,10 +56,8 @@ sealed interface Action {
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val appSettingsService: AppSettingsService,
-    private val userProfileRepository: UserProfileRepository,
-    private val weightMeasureRepository: WeightMeasureRepository,
     private val backupService: BackupService,
-    @param:ApplicationContext private val context: Context,
+    private val csvService: CsvService,
 ) : ViewModel(), UiEventOwner by DefaultUiEventOwner() {
     companion object {
         private val TAG = object {}.javaClass.enclosingClass?.simpleName
@@ -148,11 +137,11 @@ class SettingsViewModel @Inject constructor(
             is Action.OnCsvImport -> {
                 //_state.update { it.copy(showImportCsvPicker = false) }
                 //uri jest null gdy nie wybrano pliku, lub użyto przycisku back
-                processCsvImport(action.uri)
+                processCsvImport(action.input)
             }
 
             is Action.OnCsvExport -> {
-                processCsvExport(action.uri)
+                processCsvExport(action.output, action.filename)
             }
 
             Action.OnLanguageClick -> {
@@ -198,15 +187,13 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    private fun processCsvImport(uri: Uri) {
-        Log.d(TAG, "CSV import uri: $uri")
+    private fun processCsvImport(input: InputStream) {
+        Log.d(TAG, "CSV import")
         launchSafely {
             withCsvProcessing {
-                val mime = context.contentResolver.getType(uri)
-                Log.d(TAG, "mime: $mime")
                 try {
                     val entriesCount =
-                        importWeightCsv(weightMeasureRepository, context, uri) { progress ->
+                        csvService.importWeightCsv(input) { progress ->
                             _state.update { it.copy(csvProgress = progress) }
                         }
                     sendInfo(R.string.settings_csv_import_success, entriesCount)
@@ -217,19 +204,12 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    private fun processCsvExport(uri: Uri) {
-        Log.d(TAG, "CSV export uri: $uri")
+    private fun processCsvExport(output: OutputStream, filename: String?) {
+        Log.d(TAG, "CSV export")
         launchSafely {
             withCsvProcessing {
-                val mime = context.contentResolver.getType(uri)
-                val filename = getFileNameFromUri(context, uri)
-                Log.d(TAG, "mime: $mime, filename: $filename")
                 val entriesCount =
-                    exportWeightCsv(
-                        weightMeasureRepository.findWeightMeasureHistory(),
-                        context,
-                        uri
-                    ) { progress ->
+                    csvService.exportWeightCsv(null, output ) { progress ->
                         _state.update { it.copy(csvProgress = progress) }
                     }
                 sendInfo(
@@ -244,34 +224,13 @@ class SettingsViewModel @Inject constructor(
     private fun processDeleteAllData() {
         launchSafely {
             withLoading {
-                //usuniecie pomiarów
-                weightMeasureRepository.deleteAll()
-                //usunięcie profilu
-                userProfileRepository.deleteAll()
-                //usunięcie ustawień
-                appSettingsService.deleteAll()
-                deleteAppFiles()
+                backupService.deleteAll()
                 sendInfo(R.string.settings_delete_all_success)
                 updateAvailableRestore()
             }
         }
     }
 
-    private suspend fun deleteAppFiles() = withContext(Dispatchers.IO) {
-        //usunięcie wygenerowanego wykresu
-        val fileChart = File(context.filesDir, Constants.WEIGHT_CHART_FILENAME)
-        if (fileChart.exists()) {
-            Log.d(TAG, "Delete ${Constants.WEIGHT_CHART_FILENAME}")
-            fileChart.delete()
-        }
-        /*
-        val fileProfile = File(context.filesDir, Constants.PROFILE_PHOTO_FILENAME)
-        if (fileProfile.exists()) {
-            Log.d(TAG, "Delete ${Constants.PROFILE_PHOTO_FILENAME}")
-            fileProfile.delete()
-        }
-        */
-    }
 
     private fun setLanguage(tag: String) {
         Log.d(TAG, "setLanguage to: $tag")

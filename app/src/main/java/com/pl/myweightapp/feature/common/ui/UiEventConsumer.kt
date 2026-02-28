@@ -1,13 +1,13 @@
-package com.pl.myweightapp.core.ui
+package com.pl.myweightapp.feature.common.ui
 
 import android.util.Log
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
-import com.pl.myweightapp.core.presentation.UiEvent
-import com.pl.myweightapp.core.presentation.asString
-import com.pl.myweightapp.core.presentation.util.ObserveAsEvents
+import com.pl.myweightapp.feature.common.ObserveAsEvents
+import com.pl.myweightapp.feature.common.UiEvent
+import com.pl.myweightapp.feature.common.asString
 import kotlinx.coroutines.flow.Flow
 
 @Composable

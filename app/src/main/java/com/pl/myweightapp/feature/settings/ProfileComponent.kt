@@ -1,5 +1,6 @@
 package com.pl.myweightapp.feature.settings
 
+import android.graphics.BitmapFactory
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -34,7 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -82,7 +83,9 @@ fun ProfileComponent(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
         if (uri != null) {
-            onAction(ProfileAction.PhotoPicked(uri))
+            context.contentResolver.openInputStream(uri)?.let { inputStream ->
+                onAction(ProfileAction.PhotoPicked(inputStream))
+            }
         }
     }
 
@@ -207,35 +210,48 @@ fun ProfileComponent(
                 contentAlignment = Alignment.Center
             ) {
                 when {
-                    state.photoBitmap != null -> {
+                    state.tmpPhotoPath != null || state.photoPath != null -> {
                         Log.d(TAG,"Load avatar from bitmap")
-                        Image(
-                            painter = BitmapPainter(state.photoBitmap),
-                            contentDescription = "Avatar",
-                            modifier = Modifier
-                                .fillMaxSize()
-                                //.aspectRatio(1f)
-                                .border(3.5.dp, MaterialTheme.colorScheme.secondary, CircleShape)
-                                .clip(CircleShape),
-                            contentScale = ContentScale.Crop
-                        )
+                        val photoBitmap = remember(state.tmpPhotoPath, state.photoPath ) {
+                            val file = File(state.tmpPhotoPath ?: state.photoPath ?: error("empty photo"))
+                            BitmapFactory.decodeFile(file.absolutePath)?.asImageBitmap()
+                        }
+                        if (photoBitmap != null) {
+                            Image(
+                                bitmap = photoBitmap,
+                                contentDescription = "Avatar",
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    //.aspectRatio(1f)
+                                    .border(
+                                        3.5.dp,
+                                        MaterialTheme.colorScheme.secondary,
+                                        CircleShape
+                                    )
+                                    .clip(CircleShape),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Text(stringResource(R.string.profile_error_in_avatar_image))
+                        }
                     }
                     state.isLoading -> {
                         Log.d(TAG,"CircularProgressIndicator")
                         CircularProgressIndicator(modifier = Modifier.size(24.dp))
                     }
-                    state.photoPath == null -> {
+                    //state.photoPath == null -> {
+                    else -> {
                         Log.d(TAG,"Load avatar from resource")
                         Image(
                             painter = painterResource(R.drawable.ic_face3),
                             contentDescription = "Avatar",
                         )
                     }
-                    else -> {
-                        // photoPath != null, ale photoBitmap == null i isLoading == false
-                        // czyli bitmapa jeszcze się nie załadowała albo problem przy ładowaniu bitmapy
-                        CircularProgressIndicator(modifier = Modifier.size(16.dp))
-                    }
+//                    else -> {
+//                        // photoPath != null, ale photoBitmap == null i isLoading == false
+//                        // czyli bitmapa jeszcze się nie załadowała albo problem przy ładowaniu bitmapy
+//                        CircularProgressIndicator(modifier = Modifier.size(16.dp))
+//                    }
                 }
             }
             Spacer(Modifier.height(8.dp))

@@ -2,17 +2,15 @@ package com.pl.myweightapp.data.local
 
 import android.content.Context
 import android.util.Log
-import androidx.core.net.toUri
 import com.pl.myweightapp.R
 import com.pl.myweightapp.core.Constants
-import com.pl.myweightapp.data.csv.exportWeightCsv
-import com.pl.myweightapp.data.csv.importWeightCsv
+import com.pl.myweightapp.domain.AppSettingsService
 import com.pl.myweightapp.domain.BackupService
 import com.pl.myweightapp.domain.UserProfile
 import com.pl.myweightapp.domain.UserProfileRepository
 import com.pl.myweightapp.domain.WeightMeasure
 import com.pl.myweightapp.domain.WeightMeasureRepository
-import dagger.hilt.android.qualifiers.ApplicationContext
+import com.pl.myweightapp.domain.csv.CsvService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -28,9 +26,11 @@ import javax.inject.Singleton
 
 @Singleton
 class BackupManager @Inject constructor(
-    @param:ApplicationContext private val context: Context,
+    private val context: Context,
+    private val appSettingsService: AppSettingsService,
     private val weightRepository: WeightMeasureRepository,
     private val userProfileRepository: UserProfileRepository,
+    private val csvService: CsvService,
     scope: CoroutineScope,
 ) : BackupService {
     companion object {
@@ -78,10 +78,9 @@ class BackupManager @Inject constructor(
         Log.d(TAG, "Start backup, items: ${history.size}")
         if (history.size <= 1) return@withContext
 
-
         val backupFile = getWeightBackupFile()
         val tempFile = File(context.filesDir, "weight_backup_tmp.csv")
-        exportWeightCsv(history, context, tempFile.toUri()) {}
+        csvService.exportWeightCsv(history, tempFile.outputStream()) {}
         // 🔐 atomic write
         //tempFile.writeText(serialized)
         tempFile.renameTo(backupFile)
@@ -118,7 +117,7 @@ class BackupManager @Inject constructor(
     }
 
     private suspend fun restoreWeightBackupFile(file: File): Int {
-        return importWeightCsv(weightRepository, context, file.toUri()) {}
+        return csvService.importWeightCsv(file.inputStream()) {}
     }
 
     private suspend fun restoreProfilePhotoFile(file: File) {
@@ -134,4 +133,31 @@ class BackupManager @Inject constructor(
                 && !weightRepository.hasAny())
                 && (getWeightBackupFile().exists() || getProfilePhotoFile().exists())
     }
+
+    override suspend fun deleteAll() = withContext(Dispatchers.IO) {
+        //usuniecie pomiarów
+        weightRepository.deleteAll()
+        //usunięcie profilu
+        userProfileRepository.deleteAll()
+        //usunięcie ustawień
+        appSettingsService.deleteAll()
+        deleteAppFiles()
+    }
+
+    private suspend fun deleteAppFiles() = withContext(Dispatchers.IO) {
+        //usunięcie wygenerowanego wykresu
+        val fileChart = File(context.filesDir, Constants.WEIGHT_CHART_FILENAME)
+        if (fileChart.exists()) {
+            Log.d(TAG, "Delete ${Constants.WEIGHT_CHART_FILENAME}")
+            fileChart.delete()
+        }
+        /*
+        val fileProfile = File(context.filesDir, Constants.PROFILE_PHOTO_FILENAME)
+        if (fileProfile.exists()) {
+            Log.d(TAG, "Delete ${Constants.PROFILE_PHOTO_FILENAME}")
+            fileProfile.delete()
+        }
+        */
+    }
+
 }

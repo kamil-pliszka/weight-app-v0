@@ -1,8 +1,8 @@
-package com.pl.myweightapp.core.presentation.util
+package com.pl.myweightapp.feature.common
 
 import android.content.Context
 import com.pl.myweightapp.R
-import com.pl.myweightapp.core.domain.util.NetworkError
+import com.pl.myweightapp.core.NetworkError
 
 
 fun NetworkError.toString(context: Context): String {

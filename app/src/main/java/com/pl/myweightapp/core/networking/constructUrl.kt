@@ -1,4 +1,4 @@
-package com.pl.myweightapp.core.data.networking
+package com.pl.myweightapp.core.networking
 
 import com.pl.myweightapp.BuildConfig
 

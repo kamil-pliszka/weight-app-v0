@@ -8,13 +8,11 @@ import com.github.mikephil.charting.charts.LineChart
 import com.github.mikephil.charting.components.Legend
 import com.pl.myweightapp.domain.chart.ChartData
 import com.pl.myweightapp.domain.chart.ChartImage
-import com.pl.myweightapp.domain.chart.ChartLabels
-import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.ByteArrayOutputStream
 import javax.inject.Inject
 
 class MpChartBitmapRenderer @Inject constructor(
-    @param:ApplicationContext private val context: Context,
+    private val context: Context,
 ) : ChartRenderer {
 
     companion object {
@@ -23,7 +21,6 @@ class MpChartBitmapRenderer @Inject constructor(
 
     override suspend fun render(
         chartData: ChartData,
-        chartLabels: ChartLabels,
         widthPx: Int,
         heightPx: Int
     ): ChartImage {
@@ -44,9 +41,9 @@ class MpChartBitmapRenderer @Inject constructor(
         chart.description.isEnabled = false
 
         configureChart(
+            context,
             chart,
             chartData,
-            chartLabels,
             null,
         )
 

@@ -1,4 +1,4 @@
-package com.pl.myweightapp.core.ui
+package com.pl.myweightapp.feature.common.ui
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Box

@@ -1,4 +1,4 @@
-package com.pl.myweightapp.core.presentation
+package com.pl.myweightapp.feature.common
 
 import androidx.annotation.StringRes
 import kotlinx.coroutines.flow.MutableSharedFlow

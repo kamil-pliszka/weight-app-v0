@@ -35,10 +35,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.pl.myweightapp.R
-import com.pl.myweightapp.core.ui.ConfirmationDialog
+import com.pl.myweightapp.feature.common.ui.ConfirmationDialog
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -53,13 +54,17 @@ fun SettingsScreen(
     profileOnAction: (ProfileAction) -> Unit,
 ) {
     //val state by viewModel.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     val launcherChooseFileImport = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
     ) { uri ->
         Log.d(TAG, "onResult, uri: $uri")
         if (uri != null) {
-            onAction(Action.OnCsvImport(uri))
+            Log.d(TAG, "mime:" + context.contentResolver.getType(uri))
+            context.contentResolver.openInputStream(uri)?.let { inputStream ->
+                onAction(Action.OnCsvImport(inputStream))
+            }
         }
     }
 
@@ -68,7 +73,12 @@ fun SettingsScreen(
     ) { uri ->
         Log.d(TAG, "onResult, uri: $uri")
         if (uri != null) {
-            onAction(Action.OnCsvExport(uri))
+            val filename = getFileNameFromUri(context, uri)
+            val mime = context.contentResolver.getType(uri)
+            Log.d(TAG, "mime: $mime, filename: $filename")
+            context.contentResolver.openOutputStream(uri)?.use { stream ->
+                onAction(Action.OnCsvExport(stream, filename))
+            }
         }
     }
 

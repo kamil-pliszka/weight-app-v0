@@ -1,4 +1,4 @@
-package com.pl.myweightapp.core.presentation.util
+package com.pl.myweightapp.feature.common
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect

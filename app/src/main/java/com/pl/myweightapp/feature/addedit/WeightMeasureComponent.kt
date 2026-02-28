@@ -17,9 +17,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.pl.myweightapp.core.ui.InfiniteCircularList
-import com.pl.myweightapp.core.ui.label
 import com.pl.myweightapp.domain.WeightUnit
+import com.pl.myweightapp.feature.common.ui.InfiniteCircularList
+import com.pl.myweightapp.feature.common.ui.label
 import java.math.BigDecimal
 import java.math.RoundingMode
 

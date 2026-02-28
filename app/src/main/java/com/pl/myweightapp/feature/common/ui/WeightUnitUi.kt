@@ -1,4 +1,4 @@
-package com.pl.myweightapp.core.ui
+package com.pl.myweightapp.feature.common.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource

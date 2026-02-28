@@ -1,5 +1,6 @@
-package com.pl.myweightapp.core.ui
+package com.pl.myweightapp.feature.common.ui
 
+import android.R
 import android.content.Context
 import android.graphics.Color
 import android.util.TypedValue
@@ -16,13 +17,13 @@ fun showErrorToast(context: Context, message: String) {
     val layout = LinearLayout(context).apply {
         orientation = LinearLayout.HORIZONTAL
         setPadding(24, 16, 24, 16)
-        setBackgroundResource(android.R.color.background_dark) // lub custom bg
+        setBackgroundResource(R.color.background_dark) // lub custom bg
         gravity = Gravity.CENTER_VERTICAL
     }
 
     // Ikona błędu
     val imageView = ImageView(context).apply {
-        setImageResource(android.R.drawable.ic_dialog_alert)
+        setImageResource(R.drawable.ic_dialog_alert)
         setColorFilter(Color.RED)
     }
 

@@ -1,39 +1,31 @@
 package com.pl.myweightapp.feature.settings
 
-import android.content.Context
-import android.graphics.BitmapFactory
-import android.net.Uri
 import android.util.Log
 import androidx.compose.runtime.Immutable
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pl.myweightapp.R
 import com.pl.myweightapp.core.Constants.PROFILE_PHOTO_FILENAME
-import com.pl.myweightapp.core.presentation.DefaultUiEventOwner
-import com.pl.myweightapp.core.presentation.UiEventOwner
-import com.pl.myweightapp.core.presentation.launchSafely
-import com.pl.myweightapp.core.presentation.sendInfo
 import com.pl.myweightapp.core.util.kgToLbs
 import com.pl.myweightapp.core.util.lbsToKg
 import com.pl.myweightapp.domain.Gender
 import com.pl.myweightapp.domain.HeightUnit
+import com.pl.myweightapp.domain.StorageSupport
 import com.pl.myweightapp.domain.UserProfile
 import com.pl.myweightapp.domain.UserProfileRepository
 import com.pl.myweightapp.domain.WeightUnit
+import com.pl.myweightapp.feature.common.DefaultUiEventOwner
+import com.pl.myweightapp.feature.common.UiEventOwner
+import com.pl.myweightapp.feature.common.launchSafely
+import com.pl.myweightapp.feature.common.sendInfo
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.io.File
+import java.io.InputStream
 import java.math.BigDecimal
 import javax.inject.Inject
 
@@ -49,7 +41,8 @@ data class ProfileUiState(
     val gender: Gender = Gender.UNSPECIFIED,
     val photoPath: String? = null,
     val tmpPhotoPath: String? = null,   // robocze
-    val photoBitmap: ImageBitmap? = null,
+    //val photoBitmap: ImageBitmap? = null,
+    //val photoImagePath: String? = null,
 
     val height: String = "",
     val targetWeight: String = "",
@@ -74,7 +67,7 @@ sealed interface ProfileAction {
     //data class PhotoChanged(val path: String) : ProfileAction
     object SaveClicked : ProfileAction
 
-    data class PhotoPicked(val uri: Uri) : ProfileAction
+    data class PhotoPicked(val input: InputStream) : ProfileAction
     data class PhotoCaptured(val capturedFilePath: String) : ProfileAction
     object ToggleWeightUnit : ProfileAction
     object ToggleHeightUnit : ProfileAction
@@ -84,8 +77,8 @@ sealed interface ProfileAction {
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val repository: UserProfileRepository,
-    @param:ApplicationContext private val context: Context,
-): ViewModel(), UiEventOwner by DefaultUiEventOwner() {
+    private val storageSupport: StorageSupport,
+) : ViewModel(), UiEventOwner by DefaultUiEventOwner() {
     companion object {
         private val TAG = object {}.javaClass.enclosingClass?.simpleName
     }
@@ -95,18 +88,7 @@ class ProfileViewModel @Inject constructor(
 
     init {
         observeProfile()
-        (context.filesDir.listFiles() ?: emptyArray()).forEach { file ->
-            Log.d(
-                "FILES",
-                "File[filesDir]: ${file.name}, size: ${file.length()}, exists: ${file.exists()}"
-            )
-        }
-        (context.cacheDir.listFiles() ?: emptyArray()).forEach { file ->
-            Log.d(
-                "FILES",
-                "File[cacheDir]: ${file.name}, size: ${file.length()}, exists: ${file.exists()}"
-            )
-        }
+        storageSupport.logStorage()
     }
 
     private suspend inline fun <T> withSaving(
@@ -126,14 +108,14 @@ class ProfileViewModel @Inject constructor(
                 _state.update { it.copy(isLoading = false) }
                 if (profile == null) return@onEach
                 val validPath = profile.photoPath?.takeIf {
-                    File(it).exists()
+                    storageSupport.exists(it)
                 }.also {
                     if (it == null && profile.photoPath != null) {
                         Log.d(TAG, "Photo file not found: ${profile.photoPath}")
                     }
                 }
                 if (_state.value.photoPath != null && validPath == null) {
-                    _state.update { it.copy(photoBitmap = null) }
+                    _state.update { it.copy(photoPath = null) }
                 }
                 _state.update {
                     it.copy(
@@ -155,21 +137,9 @@ class ProfileViewModel @Inject constructor(
                         isDirty = false
                     )
                 }
-                if (validPath != null && _state.value.photoBitmap == null) {
-                    loadPhotoBitmap(validPath)
-                }
             }
             .onStart { _state.update { it.copy(isLoading = true) } }
             .launchIn(viewModelScope)
-    }
-
-    private fun loadPhotoBitmap(path: String) {
-        viewModelScope.launch {
-            val bitmap = withContext(Dispatchers.IO) {
-                BitmapFactory.decodeFile(File(path).absolutePath)?.asImageBitmap()
-            }
-            _state.update { it.copy(photoBitmap = bitmap) }
-        }
     }
 
     fun onAction(action: ProfileAction) {
@@ -209,11 +179,10 @@ class ProfileViewModel @Inject constructor(
             }
 
             is ProfileAction.PhotoPicked -> {
-                val savedPath = saveUriToCache(context, action.uri)
+                val savedPath = storageSupport.saveProfileImage(action.input)
                 //_state.update { it.copy(photoPath = savedPath) }
                 //deleteOldPhotoIfExists(state.value.photoPath)
                 update { copy(tmpPhotoPath = savedPath) }
-                loadPhotoBitmap(savedPath)
             }
 
             is ProfileAction.PhotoCaptured -> {
@@ -221,7 +190,6 @@ class ProfileViewModel @Inject constructor(
                 //_state.update { it.copy(photoPath = action.capturedFilePath) }
                 //deleteOldPhotoIfExists(state.value.photoPath)
                 update { copy(tmpPhotoPath = action.capturedFilePath) }
-                loadPhotoBitmap(action.capturedFilePath)
             }
 
             ProfileAction.ToggleWeightUnit -> {
@@ -288,7 +256,10 @@ class ProfileViewModel @Inject constructor(
         }
 
         val finalPhoto = if (s.tmpPhotoPath != null) {
-            moveTmpToFinal(context, from = s.tmpPhotoPath, to = PROFILE_PHOTO_FILENAME)
+            storageSupport.moveTmpToFinal(
+                fromPath = s.tmpPhotoPath,
+                toFilename = PROFILE_PHOTO_FILENAME
+            )
         } else {
             s.photoPath
         }
@@ -318,49 +289,5 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    /*
-    fun saveUriToInternalFile(uri: Uri): String {
-        val context = getApplication() as Context
-        val inputStream = context.contentResolver.openInputStream(uri)!!
-        val file = File(context.filesDir, "profile_photo.jpg")
-        inputStream.use { input ->
-            file.outputStream().use { output ->
-                input.copyTo(output)
-            }
-        }
-        return file.absolutePath
-    }
-    */
 
-    fun saveUriToCache(
-        context: Context,
-        uri: Uri
-    ): String {
-        //val timestamp = System.currentTimeMillis()
-        //val fileName = "profile_tmp_$timestamp.jpg"
-        val fileName = "profile_tmp_gallery.jpg"
-        val file = File(context.cacheDir, fileName)
-        context.contentResolver.openInputStream(uri)?.use { input ->
-            file.outputStream().use { output ->
-                input.copyTo(output)
-            }
-        } ?: throw IllegalStateException("Cannot open uri: $uri")
-        return file.absolutePath
-    }
-
-    fun moveTmpToFinal(
-        context: Context,
-        from: String,
-        to: String
-    ): String {
-        val finalFile = File(context.filesDir, to)
-        val tmpFile = File(from)
-        tmpFile.copyTo(finalFile, overwrite = true)
-        Log.d(
-            TAG,
-            "Copied tmp file to: ${finalFile.absolutePath}, file size = ${finalFile.length()}"
-        )
-        Log.d(TAG, "Delete tmp file: ${tmpFile.absolutePath}")
-        return finalFile.absolutePath
-    }
 }

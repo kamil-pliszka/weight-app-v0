@@ -1,4 +1,4 @@
-package com.pl.myweightapp.core.presentation
+package com.pl.myweightapp.feature.common
 /*
 import android.util.Log
 import androidx.annotation.StringRes

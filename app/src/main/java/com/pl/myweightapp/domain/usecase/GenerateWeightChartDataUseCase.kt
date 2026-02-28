@@ -2,10 +2,10 @@ package com.pl.myweightapp.domain.usecase
 
 import com.pl.myweightapp.core.util.daysToMillis
 import com.pl.myweightapp.core.util.millisToDaysFloat
-import com.pl.myweightapp.domain.chart.ChartData
-import com.pl.myweightapp.domain.chart.ChartMeasure
 import com.pl.myweightapp.domain.WeightMeasure
 import com.pl.myweightapp.domain.WeightUnit
+import com.pl.myweightapp.domain.chart.ChartData
+import com.pl.myweightapp.domain.chart.ChartMeasure
 import com.pl.myweightapp.domain.convertWeightTo
 
 class GenerateWeightChartDataUseCase {
@@ -22,6 +22,8 @@ class GenerateWeightChartDataUseCase {
         val totalMeasures = prepareChartMeasures(totalWeightMeasures, unit)
         val measuresOnChart = totalMeasures.subList(startIdx, totalMeasures.size)
         if (measuresOnChart.isEmpty()) return ChartData()
+
+        val average = measuresOnChart.map { it.value }.average().toFloat()
 
         val mav1 = movingAverage1?.let {
             generateMovingAverage(
@@ -41,6 +43,7 @@ class GenerateWeightChartDataUseCase {
 
         return ChartData(
             measures = measuresOnChart,
+            average = average,
             movingAverage1 = mav1,
             movingAverage2 = mav2,
             mav1Period = movingAverage1,

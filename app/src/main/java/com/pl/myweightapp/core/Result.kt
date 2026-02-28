@@ -1,4 +1,4 @@
-package com.pl.myweightapp.core.domain.util
+package com.pl.myweightapp.core
 
 typealias DomainError = Error
 

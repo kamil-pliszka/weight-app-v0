@@ -1,35 +1,27 @@
 package com.pl.myweightapp.feature.home
 
 import android.util.Log
-import androidx.compose.runtime.Immutable
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pl.myweightapp.R
-import com.pl.myweightapp.core.Constants
-import com.pl.myweightapp.core.presentation.DefaultUiEventOwner
-import com.pl.myweightapp.core.presentation.UiEventOwner
-import com.pl.myweightapp.core.presentation.launchSafely
-import com.pl.myweightapp.core.presentation.sendError
 import com.pl.myweightapp.core.util.exceptionToString
 import com.pl.myweightapp.core.util.toInstant
 import com.pl.myweightapp.core.util.toLocalDate
 import com.pl.myweightapp.domain.AppSettings
 import com.pl.myweightapp.domain.AppSettingsService
 import com.pl.myweightapp.domain.DisplayPeriod
-import com.pl.myweightapp.domain.ResourceProvider
 import com.pl.myweightapp.domain.UserProfileRepository
 import com.pl.myweightapp.domain.WeightMeasure
 import com.pl.myweightapp.domain.WeightMeasureRepository
 import com.pl.myweightapp.domain.WeightUnit
-import com.pl.myweightapp.domain.chart.ChartData
-import com.pl.myweightapp.domain.chart.ChartImageExporter
-import com.pl.myweightapp.domain.chart.ChartImageImporter
-import com.pl.myweightapp.domain.chart.ChartLabels
+import com.pl.myweightapp.domain.chart.ChartImageManager
 import com.pl.myweightapp.domain.convertValueTo
 import com.pl.myweightapp.domain.convertWeightTo
 import com.pl.myweightapp.domain.usecase.GenerateWeightChartDataUseCase
-import com.pl.myweightapp.feature.home.chart.ChartImageDecoder
+import com.pl.myweightapp.feature.common.DefaultUiEventOwner
+import com.pl.myweightapp.feature.common.UiEventOwner
+import com.pl.myweightapp.feature.common.launchSafely
+import com.pl.myweightapp.feature.common.sendError
 import com.pl.myweightapp.feature.home.chart.ChartRenderer
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,27 +35,6 @@ import kotlinx.coroutines.flow.update
 import java.math.BigDecimal
 import javax.inject.Inject
 
-@Immutable
-data class UiState(
-    val isLoading: Boolean = false,
-    val useEmbeddedChart: Boolean = Constants.DEFAULT_USE_EMBEDDED_CHART,
-    val isProcessing: Boolean = false,
-    val chartBitmap: ImageBitmap? = null,
-    val unit: WeightUnit = WeightUnit.KG,
-    val period: DisplayPeriod = DisplayPeriod.P2M,
-    val movingAverage1: Int? = null,
-    val movingAverage2: Int? = null,
-    val startWeight: Float? = null,
-    val currentWeight: Float? = null,
-    val destinationWeight: Float? = null,
-    val periodWeightChange: Float? = null,
-    val toDestinationWeight: Float? = null,
-    val chartWidthPx: Int = 0,
-    val chartHeightPx: Int = 0,
-    val chartData: ChartData = ChartData(),
-    val chartLabels: ChartLabels = ChartLabels(),
-)
-
 sealed interface Action {
     data class OnChangeChartDimensionsAction(val widthPx: Int, val heightPx: Int) : Action
     data class OnChangePeriod(val period: DisplayPeriod) : Action
@@ -75,18 +46,15 @@ class HomeViewModel @Inject constructor(
     weightRepo: WeightMeasureRepository,
     profileRepo: UserProfileRepository,
     private val appSettingsService: AppSettingsService,
-    private val resourceProvider: ResourceProvider,
     private val generateWeightChartDataUseCase: GenerateWeightChartDataUseCase,
     private val chartRenderer: ChartRenderer,
-    private val chartImageExporter: ChartImageExporter,
-    private val chartImageImporter: ChartImageImporter,
-    private val chartImageDecoder: ChartImageDecoder,
+    private val chartImageManager: ChartImageManager,
 ) : ViewModel(), UiEventOwner by DefaultUiEventOwner() {
     companion object {
         private val TAG = object {}.javaClass.enclosingClass?.simpleName
     }
 
-    private val _state = MutableStateFlow(UiState())
+    private val _state = MutableStateFlow(HomeScreenUiState())
     val state = _state.asStateFlow()
 
     private suspend inline fun <T> withProcessing(
@@ -211,7 +179,7 @@ class HomeViewModel @Inject constructor(
                 currentWeight = currentWeight,
                 destinationWeight = destWeight,
                 periodWeightChange = periodWeightChange,
-                toDestinationWeight = toTarget,
+                toTargetWeight = toTarget,
                 chartData = generateWeightChartDataUseCase(
                     totalWeightMeasures = measures,
                     unit = measureUnit,
@@ -220,19 +188,9 @@ class HomeViewModel @Inject constructor(
                     movingAverage2 = settings.ma2,
                     targetValue = destWeight
                 ),
-                chartLabels = prepareChartLabels(),
             )
         }
         Log.d(TAG, "Updated state")
-    }
-
-    private fun prepareChartLabels(): ChartLabels {
-        return ChartLabels(
-            weightLabel = resourceProvider.getString(R.string.chart_weight),
-            averageLabel = resourceProvider.getString(R.string.chart_average),
-            targetLabel = resourceProvider.getString(R.string.chart_target),
-            mavPrefixLabel = resourceProvider.getString(R.string.chart_mav)
-        )
     }
 
     private fun generateChartAsImage() {
@@ -248,20 +206,18 @@ class HomeViewModel @Inject constructor(
                     // Renderer zwraca już ChartImage (ByteArray)
                     val chartImage = chartRenderer.render(
                         chartData = currentState.chartData,
-                        chartLabels = currentState.chartLabels,
                         widthPx = currentState.chartWidthPx,
                         heightPx = currentState.chartHeightPx,
                     )
                     // Dekodowanie do Bitmap WYŁĄCZNIE w presentation layer
-                    val imageBitmap = chartImageDecoder.decode(chartImage)
-                    _state.update { it.copy(chartBitmap = imageBitmap) }
+                    //val imageBitmap = chartImageDecoder.decode(chartImage)
+                    //_state.update { it.copy(chartBitmap = imageBitmap) }
+                    _state.update { it.copy(chartImage = chartImage) }
                     // Eksport bez ponownej kompresji
-                    chartImageExporter.export(chartImage)
+                    chartImageManager.export(chartImage)
                     //delay(5000L)
                 } else {
-                    _state.update {
-                        it.copy(chartBitmap = null)
-                    }
+                    _state.update { it.copy(chartImage = null) }
                 }
             }
         }
@@ -269,11 +225,11 @@ class HomeViewModel @Inject constructor(
 
     private fun tryToLoadFromFile() {
         launchSafely {
-            val chartImage = chartImageImporter.import()
+            val chartImage = chartImageManager.import()
             if (chartImage != null) {
                 Log.d(TAG, "loaded chart from file")
-                val imageBitmap = chartImageDecoder.decode(chartImage)
-                _state.update { it.copy(chartBitmap = imageBitmap) }
+                //val imageBitmap = chartImageDecoder.decode(chartImage)
+                _state.update { it.copy(chartImage = chartImage) }
             }
         }
     }

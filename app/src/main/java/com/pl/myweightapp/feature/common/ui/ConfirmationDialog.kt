@@ -1,4 +1,4 @@
-package com.pl.myweightapp.core.ui
+package com.pl.myweightapp.feature.common.ui
 
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text

@@ -32,7 +32,6 @@ import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.painterResource
@@ -42,16 +41,18 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.pl.myweightapp.R
-import com.pl.myweightapp.core.ui.EnumDropdownButton
-import com.pl.myweightapp.core.ui.label
 import com.pl.myweightapp.domain.DisplayPeriod
+import com.pl.myweightapp.feature.common.ui.EnumDropdownButton
+import com.pl.myweightapp.feature.common.ui.label
+import com.pl.myweightapp.feature.home.chart.EmbeddedChartComponent
+import com.pl.myweightapp.feature.home.chart.decodeChartImageToBitmap
 
 private const val TAG = "HomeScreenLandscape"
 
 @Composable
 fun HomeScreenContentLandscape(
     modifier: Modifier = Modifier,
-    state: UiState,
+    state: HomeScreenUiState,
     //onRefresh: () -> Unit,
     onAction: (Action) -> Unit,
     //onChangePeriod: (DisplayPeriod) -> Unit,
@@ -108,7 +109,7 @@ fun HomeScreenContentLandscape(
 @Composable
 fun ChartImageContentLandscape(
     modifier: Modifier = Modifier,
-    state: UiState,
+    state: HomeScreenUiState,
     onChangeChartDimensions: (Int, Int) -> Unit
 ) {
     val scrollState = rememberScrollState()
@@ -133,9 +134,7 @@ fun ChartImageContentLandscape(
             }
     ) {
         if (state.useEmbeddedChart) {
-            EmbededChartComponent(
-                state = state,
-            )
+            EmbeddedChartComponent(state = state)
         } else {
             Box(
                 modifier = Modifier
@@ -146,15 +145,22 @@ fun ChartImageContentLandscape(
                     .horizontalScroll(scrollState),
                 contentAlignment = Alignment.CenterStart
             ) {
-                if (state.chartBitmap != null) {
-                    Image(
-                        painter = BitmapPainter(state.chartBitmap),
-                        contentDescription = stringResource(R.string.home_weight_graph),
-                        modifier = Modifier
-                            .fillMaxHeight(),
-                        //.onSizeChanged { sz -> Log.d(TAG,"new size:img:$sz") }
-                        contentScale = ContentScale.FillHeight
-                    )
+                if (state.chartImage != null) {
+                    val bitmapImage = remember(state.chartImage) {
+                        decodeChartImageToBitmap(state.chartImage)
+                    }
+                    if (bitmapImage != null) {
+                        Image(
+                            bitmap = bitmapImage,
+                            contentDescription = stringResource(R.string.home_weight_graph),
+                            modifier = Modifier
+                                .fillMaxHeight(),
+                            //.onSizeChanged { sz -> Log.d(TAG,"new size:img:$sz") }
+                            contentScale = ContentScale.FillHeight
+                        )
+                    } else {
+                        Text(stringResource(R.string.chart_error_image))
+                    }
                 } else {
                     Image(
                         painter = painterResource(id = R.drawable.ic_chart_trend_down),
@@ -172,7 +178,7 @@ fun ChartImageContentLandscape(
 
 @Composable
 fun LegendVertical(
-    state: UiState,
+    state: HomeScreenUiState,
     onChangeMovingAverages: (Int?, Int?) -> Unit,
     onChangePeriod: (DisplayPeriod) -> Unit,
 ) {
@@ -241,7 +247,7 @@ fun LegendVertical(
             HorizontalDivider(modifier = Modifier.width(70.dp))
 
             Text(stringResource(R.string.home_legend_to_target))
-            Text("${state.toDestinationWeight?.let { "%.1f".format(it) } ?: "–"} $unitStr")
+            Text("${state.toTargetWeight?.let { "%.1f".format(it) } ?: "–"} $unitStr")
         }
     }
 }

@@ -13,52 +13,31 @@ import com.pl.myweightapp.domain.DisplayPeriod
 @Composable
 fun HomeScreenPortraitPreview() {
     HomeScreenContentPortrait(
-        state = UiState(isProcessing = true),
+        state = HomeScreenUiState(isProcessing = true),
         onAction = {},
-//        onChangePeriod = { },
-//        onChangeMovingAverages = { _, _ -> },
-//        onChangeChartDimensions = { _, _ -> },
     )
 }
 
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
-    state: UiState,
+    state: HomeScreenUiState,
     onAction: (Action) -> Unit,
-    //snackbarHostState: SnackbarHostState,
-    //viewModel: HomeViewModel = hiltViewModel(),
 ) {
-    //val state by viewModel.state.collectAsStateWithLifecycle()
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-    //Log.d(TAG, "isLandscape: $isLandscape")
 
     if (isLandscape) {
         HomeScreenContentLandscape(
             modifier = modifier,
             state = state,
             onAction = onAction,
-//            onChangePeriod = { onAction(Action.OnChangePeriod(it)) },
-//            onChangeMovingAverages = { ma1, ma2 ->
-//                onAction(Action.OnChangeMovingAverages(ma1, ma2))
-//            },
-//            onChangeChartDimensions = { widthPx, heightPx ->
-//                onAction(Action.OnChangeChartDimensionsAction(widthPx, heightPx))
-//            }
         )
     } else {
         HomeScreenContentPortrait(
             modifier = modifier,
             state = state,
             onAction = onAction,
-//            onChangePeriod = { onAction(Action.OnChangePeriod(it)) },
-//            onChangeMovingAverages = { ma1, ma2 ->
-//                onAction(Action.OnChangeMovingAverages(ma1, ma2))
-//            },
-//            onChangeChartDimensions = { widthPx, heightPx ->
-//                onAction(Action.OnChangeChartDimensionsAction(widthPx, heightPx))
-//            }
         )
     }
 }

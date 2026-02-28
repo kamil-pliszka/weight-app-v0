@@ -102,4 +102,6 @@
     <string name="backup_profile_photo_restored">Profile photo restored</string>
     <string name="backup_measuremets_restored">Successfuly restored %1$d measuremets</string>
     <string name="settings_version">Version</string>
+    <string name="chart_error_image">Error image</string>
+    <string name="profile_error_in_avatar_image">Error in avatar image</string>
 </resources>

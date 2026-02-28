@@ -24,9 +24,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import com.pl.myweightapp.R
-import com.pl.myweightapp.core.ui.ConfirmationDialog
-import com.pl.myweightapp.core.ui.toWeightUnit
 import com.pl.myweightapp.core.util.toDateString
+import com.pl.myweightapp.feature.common.ui.ConfirmationDialog
+import com.pl.myweightapp.feature.common.ui.toWeightUnit
 
 @Composable
 fun EditMeasureDialog(

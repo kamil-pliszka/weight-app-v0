@@ -1,7 +1,7 @@
-package com.pl.myweightapp.core.data.networking
+package com.pl.myweightapp.core.networking
 
-import com.pl.myweightapp.core.domain.util.NetworkError
-import com.pl.myweightapp.core.domain.util.Result
+import com.pl.myweightapp.core.NetworkError
+import com.pl.myweightapp.core.Result
 import io.ktor.client.call.NoTransformationFoundException
 import io.ktor.client.call.body
 import io.ktor.client.statement.HttpResponse

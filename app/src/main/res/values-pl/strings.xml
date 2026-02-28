@@ -102,4 +102,6 @@
     <string name="backup_profile_photo_restored">Odzyskano zdjęcie profilowe</string>
     <string name="backup_measuremets_restored">Odzyskano %1$d pomiarów</string>
     <string name="settings_version">Wersja</string>
+    <string name="chart_error_image">Niepoprawne dane wykresu</string>
+    <string name="profile_error_in_avatar_image">Niepoprawne zdjęcie profilowe</string>
 </resources>

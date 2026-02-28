@@ -5,12 +5,12 @@ import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pl.myweightapp.R
-import com.pl.myweightapp.core.presentation.DefaultUiEventOwner
-import com.pl.myweightapp.core.presentation.UiEventOwner
-import com.pl.myweightapp.core.presentation.launchSafely
-import com.pl.myweightapp.core.presentation.sendInfo
 import com.pl.myweightapp.domain.WeightMeasure
 import com.pl.myweightapp.domain.WeightMeasureRepository
+import com.pl.myweightapp.feature.common.DefaultUiEventOwner
+import com.pl.myweightapp.feature.common.UiEventOwner
+import com.pl.myweightapp.feature.common.launchSafely
+import com.pl.myweightapp.feature.common.sendInfo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow

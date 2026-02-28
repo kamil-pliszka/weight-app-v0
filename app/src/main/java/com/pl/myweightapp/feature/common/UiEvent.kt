@@ -1,7 +1,7 @@
-package com.pl.myweightapp.core.presentation
+package com.pl.myweightapp.feature.common
 
 import android.content.Context
-import com.pl.myweightapp.core.domain.util.NetworkError
+import com.pl.myweightapp.core.NetworkError
 
 sealed interface UiEvent {
     data class NetError(val error: NetworkError) : UiEvent

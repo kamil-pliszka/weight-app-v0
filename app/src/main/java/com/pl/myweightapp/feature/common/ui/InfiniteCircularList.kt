@@ -1,4 +1,4 @@
-package com.pl.myweightapp.core.ui
+package com.pl.myweightapp.feature.common.ui
 
 import android.util.Log
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior

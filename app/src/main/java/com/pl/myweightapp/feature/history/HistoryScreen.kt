@@ -21,7 +21,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.pl.myweightapp.R
-import com.pl.myweightapp.core.ui.ConfirmationDialog
+import com.pl.myweightapp.feature.common.ui.ConfirmationDialog
 import kotlinx.coroutines.launch
 
 private const val TAG = "HistoryScreen"

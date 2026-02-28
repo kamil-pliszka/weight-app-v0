@@ -36,13 +36,13 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.dialog
 import androidx.navigation.navArgument
-import com.pl.myweightapp.core.presentation.util.ObserveAsEvents
-import com.pl.myweightapp.core.ui.UiEventConsumer
 import com.pl.myweightapp.feature.addedit.AddEditMeasureEvent
 import com.pl.myweightapp.feature.addedit.AddMeasureDialog
 import com.pl.myweightapp.feature.addedit.AddMeasureViewModel
 import com.pl.myweightapp.feature.addedit.EditMeasureDialog
 import com.pl.myweightapp.feature.addedit.EditMeasureViewModel
+import com.pl.myweightapp.feature.common.ObserveAsEvents
+import com.pl.myweightapp.feature.common.ui.UiEventConsumer
 import com.pl.myweightapp.feature.history.HistoryScreen
 import com.pl.myweightapp.feature.history.HistoryUiEvent
 import com.pl.myweightapp.feature.history.HistoryViewModel
