@@ -3,9 +3,9 @@ package com.pl.myweightapp.domain
 import java.io.InputStream
 
 interface StorageSupport {
-    fun logStorage()
-    fun cleanupTemporary()
-    fun moveTmpToFinal(fromPath: String, toFilename: String): String
-    fun saveProfileImage(input: InputStream): String
-    fun exists(path: String): Boolean
+    suspend fun logStorage()
+    suspend fun cleanupTemporary()
+    suspend fun copyTmpToFinal(fromPath: String, toFilename: String): String
+    suspend fun saveProfileImage(input: InputStream): String
+    suspend fun exists(path: String): Boolean
 }

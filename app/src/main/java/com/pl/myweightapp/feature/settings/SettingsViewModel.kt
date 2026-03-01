@@ -18,8 +18,9 @@ import com.pl.myweightapp.feature.common.sendMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 import java.io.InputStream
 import java.io.OutputStream
 import java.time.format.DateTimeFormatter
@@ -68,6 +69,7 @@ class SettingsViewModel @Inject constructor(
 
     private fun prepareInitialUiState(): UiState {
         val versionHash = BuildConfig.VERSION_NAME
+        //w BuildConfig.VERSION_CODE mamy gitCommitEpoch, szczegóły w build.gradle.kts
         val instant = java.time.Instant.ofEpochSecond(BuildConfig.VERSION_CODE.toLong())
         val dateTime = instant.atZone(java.time.ZoneId.systemDefault())
         val versionDateStr = DateTimeFormatter.ofPattern("yyyyMMdd-HHmm").format(dateTime)
@@ -83,8 +85,8 @@ class SettingsViewModel @Inject constructor(
     }
 
     private fun observeSettings() {
-        viewModelScope.launch {
-            appSettingsService.settingsFlow.collect { settings ->
+        appSettingsService.settingsFlow
+            .onEach { settings ->
                 Log.d(TAG, "observeSettings: $settings")
                 _state.update {
                     it.copy(
@@ -94,20 +96,19 @@ class SettingsViewModel @Inject constructor(
                     )
                 }
                 updateAvailableRestore()
-            }
-        }
+            }.launchIn(viewModelScope)
     }
 
-    private fun updateAvailableRestore() {
-        viewModelScope.launch {
-            val availableRestore = backupService.isAvailableRestore()
-            Log.d(TAG, "isAvailableRestore = $availableRestore")
-            _state.update {
-                it.copy(
-                    visibleRestore = availableRestore,
-                )
-            }
+    private suspend fun updateAvailableRestore() {
+        //viewModelScope.launch {
+        val availableRestore = backupService.isAvailableRestore()
+        Log.d(TAG, "isAvailableRestore = $availableRestore")
+        _state.update {
+            it.copy(
+                visibleRestore = availableRestore,
+            )
         }
+        //}
     }
 
     private fun langDisplayResId(tag: String): Int? {
@@ -183,7 +184,7 @@ class SettingsViewModel @Inject constructor(
             _state.update { it.copy(isCsvProcessing = true) }
             block()
         } finally {
-            _state.update { it.copy(isCsvProcessing = false) }
+            _state.update { it.copy(isCsvProcessing = false, csvProgress = 0f) }
         }
     }
 
@@ -209,7 +210,7 @@ class SettingsViewModel @Inject constructor(
         launchSafely {
             withCsvProcessing {
                 val entriesCount =
-                    csvService.exportWeightCsv(null, output ) { progress ->
+                    csvService.exportWeightCsv(null, output) { progress ->
                         _state.update { it.copy(csvProgress = progress) }
                     }
                 sendInfo(
@@ -235,7 +236,9 @@ class SettingsViewModel @Inject constructor(
     private fun setLanguage(tag: String) {
         Log.d(TAG, "setLanguage to: $tag")
         launchSafely {
-            appSettingsService.changeLanguage(tag)
+            withLoading {
+                appSettingsService.changeLanguage(tag)
+            }
         }
     }
 
@@ -243,7 +246,9 @@ class SettingsViewModel @Inject constructor(
     private fun changeUseEmbeddedChart(embeddedChart: Boolean) {
         Log.d(TAG, "changeUseEmbeddeChart to: $embeddedChart")
         launchSafely {
-            appSettingsService.updateEmbeddedChart(embeddedChart)
+            withLoading {
+                appSettingsService.updateEmbeddedChart(embeddedChart)
+            }
         }
     }
 
@@ -251,9 +256,11 @@ class SettingsViewModel @Inject constructor(
     private fun tryToRestore() {
         Log.d(TAG, "tryToRestore")
         launchSafely {
-            val msg = backupService.tryToRestoreBackup()
-            sendMessage(msg)
-            updateAvailableRestore()
+            withLoading {
+                val msg = backupService.tryToRestoreBackup()
+                sendMessage(msg)
+                updateAvailableRestore()
+            }
         }
     }
 

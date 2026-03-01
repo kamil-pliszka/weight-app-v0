@@ -1,8 +1,6 @@
 package com.pl.myweightapp.feature.home
 
 import android.util.Log
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,7 +9,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
@@ -32,9 +29,7 @@ import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntSize
@@ -44,20 +39,16 @@ import com.pl.myweightapp.R
 import com.pl.myweightapp.domain.DisplayPeriod
 import com.pl.myweightapp.feature.common.ui.EnumDropdownButton
 import com.pl.myweightapp.feature.common.ui.label
+import com.pl.myweightapp.feature.home.chart.ChartImageContent
 import com.pl.myweightapp.feature.home.chart.EmbeddedChartComponent
-import com.pl.myweightapp.feature.home.chart.decodeChartImageToBitmap
 
 private const val TAG = "HomeScreenLandscape"
 
 @Composable
 fun HomeScreenContentLandscape(
     modifier: Modifier = Modifier,
-    state: HomeScreenUiState,
-    //onRefresh: () -> Unit,
+    state: HomeUiState,
     onAction: (Action) -> Unit,
-    //onChangePeriod: (DisplayPeriod) -> Unit,
-    //onChangeMovingAverages: (Int?, Int?) -> Unit,
-    //onChangeChartDimensions: (Int, Int) -> Unit,
 ) {
     Box(
         modifier = modifier
@@ -81,9 +72,6 @@ fun HomeScreenContentLandscape(
                 ChartImageContentLandscape(
                     modifier = Modifier.weight(1f),
                     state = state,
-                    //onClickGenerate = onRefresh,
-                    //onChangePeriod = onChangePeriod,
-                    //onChangeMovingAverages = onChangeMovingAverages,
                     onChangeChartDimensions = { widthPx, heightPx ->
                         onAction(Action.OnChangeChartDimensionsAction(widthPx, heightPx))
                     }
@@ -109,7 +97,7 @@ fun HomeScreenContentLandscape(
 @Composable
 fun ChartImageContentLandscape(
     modifier: Modifier = Modifier,
-    state: HomeScreenUiState,
+    state: HomeUiState,
     onChangeChartDimensions: (Int, Int) -> Unit
 ) {
     val scrollState = rememberScrollState()
@@ -136,41 +124,11 @@ fun ChartImageContentLandscape(
         if (state.useEmbeddedChart) {
             EmbeddedChartComponent(state = state)
         } else {
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    //.onSizeChanged { sz -> Log.d(TAG,"new size:box:$sz") }
-                    //.border(width = Dp.Hairline, color = Color.Magenta)
-                    //.clipToBounds()
-                    .horizontalScroll(scrollState),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                if (state.chartImage != null) {
-                    val bitmapImage = remember(state.chartImage) {
-                        decodeChartImageToBitmap(state.chartImage)
-                    }
-                    if (bitmapImage != null) {
-                        Image(
-                            bitmap = bitmapImage,
-                            contentDescription = stringResource(R.string.home_weight_graph),
-                            modifier = Modifier
-                                .fillMaxHeight(),
-                            //.onSizeChanged { sz -> Log.d(TAG,"new size:img:$sz") }
-                            contentScale = ContentScale.FillHeight
-                        )
-                    } else {
-                        Text(stringResource(R.string.chart_error_image))
-                    }
-                } else {
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_chart_trend_down),
-                        contentDescription = stringResource(R.string.home_weight_graph),
-                        modifier = Modifier
-                            .size(200.dp)
-                            .align(Alignment.Center),
-                    )
-                }
-            }
+            ChartImageContent(
+                Modifier.matchParentSize(),
+                state.chartImage,
+                scrollState
+            )
         }
     }
 }
@@ -178,7 +136,7 @@ fun ChartImageContentLandscape(
 
 @Composable
 fun LegendVertical(
-    state: HomeScreenUiState,
+    state: HomeUiState,
     onChangeMovingAverages: (Int?, Int?) -> Unit,
     onChangePeriod: (DisplayPeriod) -> Unit,
 ) {

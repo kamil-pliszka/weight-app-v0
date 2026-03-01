@@ -1,17 +1,13 @@
 package com.pl.myweightapp.feature.home
 
 import android.util.Log
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.CircularProgressIndicator
@@ -27,9 +23,7 @@ import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntSize
@@ -38,15 +32,15 @@ import com.pl.myweightapp.R
 import com.pl.myweightapp.domain.DisplayPeriod
 import com.pl.myweightapp.feature.common.ui.EnumDropdownButton
 import com.pl.myweightapp.feature.common.ui.label
+import com.pl.myweightapp.feature.home.chart.ChartImageContent
 import com.pl.myweightapp.feature.home.chart.EmbeddedChartComponent
-import com.pl.myweightapp.feature.home.chart.decodeChartImageToBitmap
 
 private const val TAG = "HomeScreenPortrait"
 
 @Composable
 fun HomeScreenContentPortrait(
     modifier: Modifier = Modifier,
-    state: HomeScreenUiState,
+    state: HomeUiState,
     //onRefresh: () -> Unit,
     onAction: (Action) -> Unit,
 //    onChangePeriod: (DisplayPeriod) -> Unit,
@@ -114,7 +108,7 @@ fun HomeScreenContentPortrait(
 }
 
 @Composable
-fun LegendTop(modifier: Modifier = Modifier, state: HomeScreenUiState) {
+fun LegendTop(modifier: Modifier = Modifier, state: HomeUiState) {
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -149,7 +143,7 @@ fun LegendTop(modifier: Modifier = Modifier, state: HomeScreenUiState) {
 }
 
 @Composable
-fun LegendBottom(modifier: Modifier = Modifier, state: HomeScreenUiState) {
+fun LegendBottom(modifier: Modifier = Modifier, state: HomeUiState) {
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -180,7 +174,7 @@ fun LegendBottom(modifier: Modifier = Modifier, state: HomeScreenUiState) {
 @Composable
 fun ChartImageContentPortrait(
     modifier: Modifier = Modifier,
-    state: HomeScreenUiState,
+    state: HomeUiState,
     onChangeChartDimensions: (Int, Int) -> Unit
 ) {
     // val painter = rememberAsyncImagePainter("file:///android_asset/my_chart.png") // Jeśli w assets
@@ -214,41 +208,11 @@ fun ChartImageContentPortrait(
                 state = state,
             )
         } else {
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    //.onSizeChanged { sz -> Log.d(TAG,"new size:box:$sz") }
-                    //.border(width = Dp.Hairline, color = Color.Magenta)
-                    //.clipToBounds()
-                    .horizontalScroll(scrollState),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                if (state.chartImage != null) {
-                    val bitmapImage = remember(state.chartImage) {
-                        decodeChartImageToBitmap(state.chartImage)
-                    }
-                    if (bitmapImage != null) {
-                        Image(
-                            bitmap = bitmapImage,
-                            contentDescription = stringResource(R.string.home_weight_graph),
-                            modifier = Modifier
-                                .fillMaxHeight(),
-                            //.onSizeChanged { sz -> Log.d(TAG,"new size:img:$sz") }
-                            contentScale = ContentScale.FillHeight
-                        )
-                    } else {
-                        Text(stringResource(R.string.chart_error_image))
-                    }
-                } else {
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_chart_trend_down),
-                        contentDescription = stringResource(R.string.home_weight_graph),
-                        modifier = Modifier
-                            .size(200.dp)
-                            .align(Alignment.Center),
-                    )
-                }
-            }
+            ChartImageContent(
+                Modifier.matchParentSize(),
+                state.chartImage,
+                scrollState
+            )
         }
     }
 }
@@ -256,7 +220,7 @@ fun ChartImageContentPortrait(
 @Composable
 fun BottomButtons(
     modifier: Modifier = Modifier,
-    state: HomeScreenUiState,
+    state: HomeUiState,
     onChangePeriod: (DisplayPeriod) -> Unit,
     onChangeMovingAverages: (Int?, Int?) -> Unit,
 ) {

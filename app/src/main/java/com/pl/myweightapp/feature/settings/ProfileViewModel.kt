@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import java.io.InputStream
 import java.math.BigDecimal
 import javax.inject.Inject
@@ -88,7 +89,9 @@ class ProfileViewModel @Inject constructor(
 
     init {
         observeProfile()
-        storageSupport.logStorage()
+        viewModelScope.launch {
+            storageSupport.logStorage()
+        }
     }
 
     private suspend inline fun <T> withSaving(
@@ -105,20 +108,21 @@ class ProfileViewModel @Inject constructor(
     private fun observeProfile() {
         repository.observeProfile()
             .onEach { profile ->
-                _state.update { it.copy(isLoading = false) }
-                if (profile == null) return@onEach
-                val validPath = profile.photoPath?.takeIf {
-                    storageSupport.exists(it)
-                }.also {
-                    if (it == null && profile.photoPath != null) {
-                        Log.d(TAG, "Photo file not found: ${profile.photoPath}")
-                    }
+                if (profile == null) {
+                    _state.update { it.copy(isLoading = false) }
+                    return@onEach
                 }
-                if (_state.value.photoPath != null && validPath == null) {
-                    _state.update { it.copy(photoPath = null) }
+                val validPath = profile.photoPath?.let {
+                    if (storageSupport.exists(it)) {
+                        it
+                    } else {
+                        Log.d(TAG, "Photo file not found: ${profile.photoPath}")
+                        null
+                    }
                 }
                 _state.update {
                     it.copy(
+                        isLoading = false,
                         name = profile.name.orEmpty(),
                         age = profile.age?.toString() ?: "",
                         height = profile.height?.toString() ?: "",
@@ -171,7 +175,6 @@ class ProfileViewModel @Inject constructor(
 
             is ProfileAction.WeightUnitChanged -> {
                 onWeightUnitChange(action.unit)
-                update { copy(weightUnit = action.unit) }
             }
             //is ProfileAction.PhotoChanged -> update { copy(photoPath = action.path) }
             ProfileAction.SaveClicked -> {
@@ -179,10 +182,12 @@ class ProfileViewModel @Inject constructor(
             }
 
             is ProfileAction.PhotoPicked -> {
-                val savedPath = storageSupport.saveProfileImage(action.input)
-                //_state.update { it.copy(photoPath = savedPath) }
-                //deleteOldPhotoIfExists(state.value.photoPath)
-                update { copy(tmpPhotoPath = savedPath) }
+                launchSafely {
+                    val savedPath = storageSupport.saveProfileImage(action.input)
+                    //_state.update { it.copy(photoPath = savedPath) }
+                    //deleteOldPhotoIfExists(state.value.photoPath)
+                    update { copy(tmpPhotoPath = savedPath) }
+                }
             }
 
             is ProfileAction.PhotoCaptured -> {
@@ -196,10 +201,10 @@ class ProfileViewModel @Inject constructor(
                 val newWeightUnit =
                     if (state.value.weightUnit == WeightUnit.KG) WeightUnit.LB else WeightUnit.KG
                 onWeightUnitChange(newWeightUnit)
-                update { copy(weightUnit = newWeightUnit) }
             }
 
             ProfileAction.ToggleHeightUnit -> {
+                //TODO - zrobić przełączanie jednostek
                 update { copy(heightUnit = if (heightUnit == HeightUnit.CM) HeightUnit.IN else HeightUnit.CM) }
             }
 
@@ -224,63 +229,69 @@ class ProfileViewModel @Inject constructor(
         _state.update { it.block().copy(isDirty = true) }
     }
 
-    private fun onWeightUnitChange(newWeightUnit: WeightUnit) {
-        if (state.value.weightUnit == newWeightUnit) return
-        val weight = state.value.targetWeight.toBigDecimalOrNull() ?: return
-        Log.d(TAG, "onWeightUnitChange: $newWeightUnit, weight: $weight")
-        val newWeightValue = when (newWeightUnit) {
+    private fun convertWeight(currentWeight: String, newUnit: WeightUnit): String? {
+        val weight = currentWeight.toBigDecimalOrNull() ?: return null
+        val newValue = when (newUnit) {
             WeightUnit.KG -> weight.toFloat().lbsToKg()
             WeightUnit.LB -> weight.toFloat().kgToLbs()
         }
-        val newWeightStr = "%.1f".format(newWeightValue).replace(",", ".").replace(".0", "")
-        Log.d(TAG, "newWeightStr: $newWeightStr")
-        update { copy(targetWeight = newWeightStr) }
+        return "%.1f".format(newValue).replace(",", ".").replace(".0", "")
+    }
+
+    private fun onWeightUnitChange(newWeightUnit: WeightUnit) {
+        if (state.value.weightUnit == newWeightUnit) return
+        update {
+            copy(
+                weightUnit = newWeightUnit,
+                targetWeight = convertWeight(targetWeight, newWeightUnit) ?: targetWeight
+            )
+        }
     }
 
     private fun save() = launchSafely {
-        val s = state.value
-        val age = s.age.toIntOrNull()
-        val height = s.height.toIntOrNull()
-        val weight = s.targetWeight.toBigDecimalOrNull()
-        if (age != null && age !in 5..120) {
-            sendInfo(R.string.profile_incorrect_age)
-            return@launchSafely
-        }
-        if (height != null && height !in 50..500) {
-            sendInfo(R.string.profile_incorrect_height)
-            return@launchSafely
-        }
-        if (weight != null && weight <= BigDecimal.ZERO) {
-            sendInfo(R.string.profile_incorrect_weight)
-            return@launchSafely
-        }
-
-        val finalPhoto = if (s.tmpPhotoPath != null) {
-            storageSupport.moveTmpToFinal(
-                fromPath = s.tmpPhotoPath,
-                toFilename = PROFILE_PHOTO_FILENAME
-            )
-        } else {
-            s.photoPath
-        }
-        //_state.update { it.copy(photoPath = finalPhoto, tmpPhotoPath = null) }
-        Log.d(TAG, "Final photo: $finalPhoto")
-        val userProfile = UserProfile(
-            name = s.name,
-            age = age,
-            height = height,
-            heightUnit = s.heightUnit,
-            targetWeight = weight,
-            weightUnit = s.weightUnit,
-            gender = s.gender,
-            photoPath = finalPhoto,
-            //displayPeriod = s.period,
-            //movingAverage1 = s.movingAverage1,
-            //movingAverage2 = s.movingAverage2,
-            //lang = s.lang
-        )
-
         withSaving {
+            val s = state.value
+            val age = s.age.toIntOrNull()
+            val height = s.height.toIntOrNull()
+            val weight = s.targetWeight.toBigDecimalOrNull()
+            if (age != null && age !in 5..120) {
+                sendInfo(R.string.profile_incorrect_age)
+                return@withSaving
+            }
+            if (height != null && height !in 50..500) {
+                sendInfo(R.string.profile_incorrect_height)
+                return@withSaving
+            }
+            if (weight != null && weight <= BigDecimal.ZERO) {
+                sendInfo(R.string.profile_incorrect_weight)
+                return@withSaving
+            }
+
+            val finalPhoto = if (s.tmpPhotoPath != null) {
+                storageSupport.copyTmpToFinal(
+                    fromPath = s.tmpPhotoPath,
+                    toFilename = PROFILE_PHOTO_FILENAME
+                )
+            } else {
+                s.photoPath
+            }
+            //_state.update { it.copy(photoPath = finalPhoto, tmpPhotoPath = null) }
+            Log.d(TAG, "Final photo: $finalPhoto")
+            val userProfile = UserProfile(
+                name = s.name,
+                age = age,
+                height = height,
+                heightUnit = s.heightUnit,
+                targetWeight = weight,
+                weightUnit = s.weightUnit,
+                gender = s.gender,
+                photoPath = finalPhoto,
+                //displayPeriod = s.period,
+                //movingAverage1 = s.movingAverage1,
+                //movingAverage2 = s.movingAverage2,
+                //lang = s.lang
+            )
+
             repository.save(userProfile)
             _state.update {
                 it.copy(isDirty = false)

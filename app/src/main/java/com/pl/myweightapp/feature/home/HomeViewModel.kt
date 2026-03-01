@@ -5,34 +5,30 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pl.myweightapp.R
 import com.pl.myweightapp.core.util.exceptionToString
-import com.pl.myweightapp.core.util.toInstant
-import com.pl.myweightapp.core.util.toLocalDate
-import com.pl.myweightapp.domain.AppSettings
 import com.pl.myweightapp.domain.AppSettingsService
 import com.pl.myweightapp.domain.DisplayPeriod
 import com.pl.myweightapp.domain.UserProfileRepository
-import com.pl.myweightapp.domain.WeightMeasure
 import com.pl.myweightapp.domain.WeightMeasureRepository
-import com.pl.myweightapp.domain.WeightUnit
 import com.pl.myweightapp.domain.chart.ChartImageManager
-import com.pl.myweightapp.domain.convertValueTo
-import com.pl.myweightapp.domain.convertWeightTo
-import com.pl.myweightapp.domain.usecase.GenerateWeightChartDataUseCase
+import com.pl.myweightapp.domain.usecase.ComputeHomeStateUseCase
+import com.pl.myweightapp.domain.usecase.GenerateChartImageUseCase
 import com.pl.myweightapp.feature.common.DefaultUiEventOwner
 import com.pl.myweightapp.feature.common.UiEventOwner
 import com.pl.myweightapp.feature.common.launchSafely
 import com.pl.myweightapp.feature.common.sendError
-import com.pl.myweightapp.feature.home.chart.ChartRenderer
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
-import java.math.BigDecimal
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 sealed interface Action {
@@ -46,18 +42,18 @@ class HomeViewModel @Inject constructor(
     weightRepo: WeightMeasureRepository,
     profileRepo: UserProfileRepository,
     private val appSettingsService: AppSettingsService,
-    private val generateWeightChartDataUseCase: GenerateWeightChartDataUseCase,
-    private val chartRenderer: ChartRenderer,
+    private val computeHomeStateUseCase: ComputeHomeStateUseCase,
+    private val generateChartImageUseCase: GenerateChartImageUseCase,
     private val chartImageManager: ChartImageManager,
 ) : ViewModel(), UiEventOwner by DefaultUiEventOwner() {
     companion object {
         private val TAG = object {}.javaClass.enclosingClass?.simpleName
     }
 
-    private val _state = MutableStateFlow(HomeScreenUiState())
+    private val _state = MutableStateFlow(HomeUiState())
     val state = _state.asStateFlow()
 
-    private suspend inline fun <T> withProcessing(
+    /*private suspend inline fun <T> withProcessing(
         crossinline block: suspend () -> T
     ): T {
         return try {
@@ -66,7 +62,7 @@ class HomeViewModel @Inject constructor(
         } finally {
             _state.update { it.copy(isProcessing = false) }
         }
-    }
+    }*/
 
 
     fun onAction(action: Action) {
@@ -78,9 +74,6 @@ class HomeViewModel @Inject constructor(
                         chartWidthPx = action.widthPx,
                         chartHeightPx = action.heightPx
                     )
-                }
-                if (!state.value.useEmbeddedChart) {
-                    generateChartAsImage()
                 }
             }
 
@@ -99,128 +92,64 @@ class HomeViewModel @Inject constructor(
             appSettingsService.settingsFlow
         ) { history, profile, settings ->
             Log.d(TAG, "From combine: ${history.size}, settings: $settings, profile: $profile")
-            Log.d(TAG, "dim: ${state.value.chartWidthPx}x${state.value.chartHeightPx}")
             // przetwarzanie do UI modelu
             Triple(history, profile, settings)
         }.onStart {
             _state.update { it.copy(isLoading = true) }
         }.onEach { (history, profile, settings) ->
-            prepareDependentStateValues(
+            val res = computeHomeStateUseCase(
                 settings,
                 history.reversed(),
                 profile?.weightUnit,
                 profile?.targetWeight
             )
-            if (!settings.embeddedChart) {
-                generateChartAsImage()
+            _state.update {
+                it.copy(
+                    isLoading = false,
+                    unit = res.unit,
+                    period = res.period,
+                    movingAverage1 = res.movingAverage1,
+                    movingAverage2 = res.movingAverage2,
+                    useEmbeddedChart = res.useEmbeddedChart,
+                    startWeight = res.startWeight,
+                    currentWeight = res.currentWeight,
+                    destinationWeight = res.destinationWeight,
+                    periodWeightChange = res.periodWeightChange,
+                    toTargetWeight = res.toTargetWeight,
+                    chartData = res.chartData
+                )
             }
         }.catch { ex ->
             sendError(R.string.error_msg_prefix, exceptionToString(ex))
         }.launchIn(viewModelScope)
-    }
 
-    private fun prepareDependentStateValues(
-        settings: AppSettings,
-        measures: List<WeightMeasure>, //tutaj pomiary już posortowane rosnąco względem daty
-        weightUnit: WeightUnit?,
-        targetWeight: BigDecimal?
-    ) {
-        val measureUnit: WeightUnit = weightUnit ?: WeightUnit.KG
-        val period: DisplayPeriod = runCatching {
-            DisplayPeriod.valueOf(settings.displayPeriod)
-        }.getOrDefault(DisplayPeriod.P2M)
-        val currentMeasure = measures.lastOrNull()
 
-        val periodStartMeasure = currentMeasure?.let {
-            if (period == DisplayPeriod.ALL) {
-                measures.firstOrNull() ?: currentMeasure
-            } else {
-                val startPeriodDate = with(currentMeasure.date.toLocalDate()) {
-                    when (period) {
-                        DisplayPeriod.P2W -> minusWeeks(2)
-                        DisplayPeriod.P1M -> minusMonths(1)
-                        DisplayPeriod.P2M -> minusMonths(2)
-                        DisplayPeriod.P3M -> minusMonths(3)
-                        DisplayPeriod.P6M -> minusMonths(6)
-                        DisplayPeriod.P1Y -> minusYears(1)
-                        DisplayPeriod.P2Y -> minusYears(2)
-                        DisplayPeriod.P3Y -> minusYears(3)
+        // generowanie obrazka który będzie wykorzystany przy inicjalnym ładowaniu VM
+        // do zastanowienia czy zostawić
+        combine(
+            _state.map { it.chartData },
+            _state.map { it.chartWidthPx to it.chartHeightPx },
+            _state.map { it.useEmbeddedChart }
+        ) { data, dims, embedded ->
+            if (embedded) return@combine null
+            Triple(data, dims.first, dims.second)
+        }
+            .distinctUntilChanged()
+            .onEach { triple ->
+                if (triple == null) return@onEach
+                val (data, width, height) = triple
+                val image = generateChartImageUseCase(
+                    chartData = data, widthPx = width, heightPx = height
+                )
+                if (image != null) {
+                    withContext(Dispatchers.IO) {
+                        chartImageManager.export(image)
                     }
-                }.plusDays(1)
-                Log.d(TAG, "PeriodDate before: $startPeriodDate")
-                val startPeriodInstant = startPeriodDate.toInstant()
-                measures.lastOrNull {
-                    it.date.isBefore(startPeriodInstant)
-                } ?: measures.first()
-            }
-        }
-        Log.d(TAG, "Period start measure: $periodStartMeasure")
-
-        val currentWeight = currentMeasure?.convertWeightTo(measureUnit)
-        val destWeight = targetWeight?.convertValueTo(measureUnit, measureUnit)
-        val periodStartWeight = periodStartMeasure?.convertWeightTo(measureUnit)
-        val toTarget =
-            if (currentWeight != null && destWeight != null) currentWeight - destWeight else null
-        val periodWeightChange =
-            if (currentWeight != null && periodStartWeight != null) currentWeight - periodStartWeight else null
-        val startIdx = periodStartMeasure?.let { m ->
-            measures.indexOf(m)
-        } ?: 0
-
-        _state.update {
-            it.copy(
-                isLoading = false,
-                unit = measureUnit,
-                period = period,
-                movingAverage1 = settings.ma1,
-                movingAverage2 = settings.ma2,
-                useEmbeddedChart = settings.embeddedChart,
-                startWeight = periodStartWeight,
-                currentWeight = currentWeight,
-                destinationWeight = destWeight,
-                periodWeightChange = periodWeightChange,
-                toTargetWeight = toTarget,
-                chartData = generateWeightChartDataUseCase(
-                    totalWeightMeasures = measures,
-                    unit = measureUnit,
-                    startIdx = startIdx,
-                    movingAverage1 = settings.ma1,
-                    movingAverage2 = settings.ma2,
-                    targetValue = destWeight
-                ),
-            )
-        }
-        Log.d(TAG, "Updated state")
-    }
-
-    private fun generateChartAsImage() {
-        val currentState = state.value
-        Log.d(TAG, "Generate chart ${currentState.chartWidthPx}x${currentState.chartHeightPx}")
-        Log.d(TAG, "Measures: ${currentState.chartData.measures.size}")
-        launchSafely {
-            withProcessing {
-                if (currentState.chartData.measures.isNotEmpty()
-                    && currentState.chartWidthPx > 0
-                    && currentState.chartHeightPx > 0
-                ) {
-                    // Renderer zwraca już ChartImage (ByteArray)
-                    val chartImage = chartRenderer.render(
-                        chartData = currentState.chartData,
-                        widthPx = currentState.chartWidthPx,
-                        heightPx = currentState.chartHeightPx,
-                    )
-                    // Dekodowanie do Bitmap WYŁĄCZNIE w presentation layer
-                    //val imageBitmap = chartImageDecoder.decode(chartImage)
-                    //_state.update { it.copy(chartBitmap = imageBitmap) }
-                    _state.update { it.copy(chartImage = chartImage) }
-                    // Eksport bez ponownej kompresji
-                    chartImageManager.export(chartImage)
-                    //delay(5000L)
-                } else {
-                    _state.update { it.copy(chartImage = null) }
                 }
+                _state.update { it.copy(chartImage = image) }
             }
-        }
+            .launchIn(viewModelScope)
+
     }
 
     private fun tryToLoadFromFile() {

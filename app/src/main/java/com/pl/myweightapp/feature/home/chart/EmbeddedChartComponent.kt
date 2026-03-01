@@ -7,11 +7,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import com.github.mikephil.charting.charts.LineChart
 import com.github.mikephil.charting.components.Legend
-import com.pl.myweightapp.feature.home.HomeScreenUiState
+import com.pl.myweightapp.feature.home.HomeUiState
 
 @Composable
 fun EmbeddedChartComponent(
-    state: HomeScreenUiState,
+    state: HomeUiState,
 ) {
     val context = LocalContext.current
     AndroidView(

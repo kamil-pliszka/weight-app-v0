@@ -45,19 +45,21 @@ fun configureChart(
         },
     )
     if (chartData.average != null) {
-        LineDataSet(
-            listOf(
-                Entry(entriesOnChart.first().x, chartData.average),
-                Entry(entriesOnChart.last().x, chartData.average),
-            ),
-            context.getString(R.string.chart_average)
-        ).apply {
-            lineWidth = 1.5f
-            setDrawCircles(false)
-            setDrawValues(false)
-            enableDashedLine(10f, 10f, 0f)
-            color = Color.Green.toArgb()
-        }
+        dataSets.add(
+            LineDataSet(
+                listOf(
+                    Entry(entriesOnChart.first().x, chartData.average),
+                    Entry(entriesOnChart.last().x, chartData.average),
+                ),
+                context.getString(R.string.chart_average)
+            ).apply {
+                lineWidth = 1.5f
+                setDrawCircles(false)
+                setDrawValues(false)
+                enableDashedLine(10f, 10f, 0f)
+                color = Color.Green.toArgb()
+            }
+        )
     }
     if (chartData.targetValue != null) {
         dataSets.add(

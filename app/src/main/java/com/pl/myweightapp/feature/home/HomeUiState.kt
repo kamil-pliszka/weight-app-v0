@@ -7,11 +7,10 @@ import com.pl.myweightapp.domain.chart.ChartData
 import com.pl.myweightapp.domain.chart.ChartImage
 
 @Immutable
-data class HomeScreenUiState(
+data class HomeUiState(
     val isLoading: Boolean = false,
     val useEmbeddedChart: Boolean = false,
     val isProcessing: Boolean = false,
-    //val chartBitmap: ImageBitmap? = null,
     val chartImage: ChartImage? = null,
     val unit: WeightUnit = WeightUnit.KG,
     val period: DisplayPeriod = DisplayPeriod.P2M,

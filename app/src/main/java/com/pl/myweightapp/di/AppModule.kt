@@ -21,6 +21,7 @@ import com.pl.myweightapp.domain.UserProfileRepository
 import com.pl.myweightapp.domain.WeightMeasureRepository
 import com.pl.myweightapp.domain.chart.ChartImageManager
 import com.pl.myweightapp.domain.csv.CsvService
+import com.pl.myweightapp.domain.usecase.ComputeHomeStateUseCase
 import com.pl.myweightapp.domain.usecase.GenerateWeightChartDataUseCase
 import com.pl.myweightapp.feature.home.chart.ChartRenderer
 import com.pl.myweightapp.feature.home.chart.MpChartBitmapRenderer
@@ -96,6 +97,12 @@ object AppModule {
     @Singleton
     fun provideGenerateWeightChartDataUseCase(): GenerateWeightChartDataUseCase =
         GenerateWeightChartDataUseCase()
+
+    @Provides
+    @Singleton
+    fun provideComputeHomeStateUseCase(
+        generateWeightChartDataUseCase : GenerateWeightChartDataUseCase
+    ): ComputeHomeStateUseCase = ComputeHomeStateUseCase(generateWeightChartDataUseCase)
 
     @Provides
     @Singleton
