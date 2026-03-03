@@ -36,6 +36,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.dialog
 import androidx.navigation.navArgument
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.pl.myweightapp.feature.addedit.AddEditMeasureEvent
 import com.pl.myweightapp.feature.addedit.AddMeasureDialog
 import com.pl.myweightapp.feature.addedit.AddMeasureViewModel
@@ -88,9 +89,11 @@ fun Navigation(
                 }
             }
             val state by viewModel.state.collectAsStateWithLifecycle()
+            val pagingItems = viewModel.measurements.collectAsLazyPagingItems()
             HistoryScreen(
                 modifier = modifier,
                 state = state,
+                pagingItems = pagingItems,
                 onAction = viewModel::onAction,
             )
         }

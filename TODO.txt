@@ -1,5 +1,4 @@
 rzeczy do zrobienia, głównie na podstawie chatgpt
 
-1. uprościć prepareDependentStateValues
 
 

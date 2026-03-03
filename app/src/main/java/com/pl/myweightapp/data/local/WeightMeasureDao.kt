@@ -1,5 +1,6 @@
 package com.pl.myweightapp.data.local
 
+import androidx.paging.PagingSource
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
@@ -76,6 +77,14 @@ interface WeightMeasureDao {
 
     @Query("SELECT * FROM ${WeightMeasureEntity.TABLE} ORDER BY date DESC, id DESC")
     fun observeWeightMeasureHistory(): Flow<List<WeightMeasureEntity>>
+
+    @Query("""
+    SELECT *, 
+        weight - LAG(weight) OVER (ORDER BY date ASC, id ASC) AS change
+    FROM ${WeightMeasureEntity.TABLE}
+    ORDER BY date DESC, id DESC
+    """)
+    fun pagingSourceWithChange(): PagingSource<Int, WeightMeasureWithChange>
 
     @Query("""
         SELECT * 

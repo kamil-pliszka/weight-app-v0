@@ -1,7 +1,12 @@
 package com.pl.myweightapp.data.repository
 
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.map
 import com.pl.myweightapp.data.local.WeightMeasureDao
 import com.pl.myweightapp.data.local.WeightMeasureEntity
+import com.pl.myweightapp.data.local.WeightMeasureWithChange
 import com.pl.myweightapp.data.mappers.toWeightMeasure
 import com.pl.myweightapp.data.mappers.toWeightMeasureEntity
 import com.pl.myweightapp.domain.WeightMeasure
@@ -83,6 +88,24 @@ class WeightMeasureRepositoryImpl(
             list -> list.map { it.toWeightMeasure() }
         }
 
+    override fun getPagedHistory(): Flow<PagingData<Pair<WeightMeasure, BigDecimal?>>> {
+        return Pager(
+            config = PagingConfig(
+                pageSize = 20,
+                enablePlaceholders = false
+            ),
+            pagingSourceFactory = {
+                weightMeasureDao.pagingSourceWithChange()
+            }
+        ).flow.map {pagingData ->
+            pagingData.map { it.toPaigingDomain() }
+        }
+    }
+
+    private fun WeightMeasureWithChange.toPaigingDomain(): Pair<WeightMeasure, BigDecimal?> =
+        measure.toWeightMeasure() to change
+
+
     override fun observeById(id: Long): Flow<WeightMeasure?> =
         weightMeasureDao.observeById(id).map {
             it?.toWeightMeasure()
@@ -105,10 +128,10 @@ class WeightMeasureRepositoryImpl(
 
 }
 
-fun sortWeightMeasureHistory(history: List<WeightMeasureEntity>): List<WeightMeasureEntity> {
-    return history.sortedWith(
-        compareByDescending<WeightMeasureEntity> { it.date }
-            .thenByDescending { it.id }
-    )
-}
-
+//fun sortWeightMeasureHistory(history: List<WeightMeasureEntity>): List<WeightMeasureEntity> {
+//    return history.sortedWith(
+//        compareByDescending<WeightMeasureEntity> { it.date }
+//            .thenByDescending { it.id }
+//    )
+//}
+//

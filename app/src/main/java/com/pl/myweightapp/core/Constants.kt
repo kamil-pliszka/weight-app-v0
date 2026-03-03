@@ -10,4 +10,5 @@ object Constants {
     const val WEIGHT_CHART_FILENAME = "weight_chart.png"
     const val DEFAULT_DISPLAY_PERIOD = "P3M"
     const val WEIGHT_BACKUP_CSV = "weight_backup.csv"
+    const val LOG_SQL: Boolean = false
 }

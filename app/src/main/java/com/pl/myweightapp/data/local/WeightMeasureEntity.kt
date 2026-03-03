@@ -1,5 +1,6 @@
 package com.pl.myweightapp.data.local
 
+import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.pl.myweightapp.domain.WeightUnit
@@ -24,4 +25,9 @@ data class WeightMeasureEntity(
 data class LastWeightMeasure(
     val weight: BigDecimal,
     val unit: WeightUnit
+)
+
+data class WeightMeasureWithChange(
+    @Embedded val measure: WeightMeasureEntity,
+    val change: BigDecimal?
 )

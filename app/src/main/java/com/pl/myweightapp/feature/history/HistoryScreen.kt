@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -20,20 +19,27 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.paging.LoadState
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.itemKey
 import com.pl.myweightapp.R
 import com.pl.myweightapp.feature.common.ui.ConfirmationDialog
 import kotlinx.coroutines.launch
 
 private const val TAG = "HistoryScreen"
+
 @Composable
 fun HistoryScreen(
     modifier: Modifier = Modifier,
     state: HistoryUiState,
+    pagingItems: LazyPagingItems<WeightMeasureUi>,
     onAction: (HistoryAction) -> Unit,
 ) {
     //val state by viewModel.state.collectAsStateWithLifecycle()
+    val measurementsAreEmpty = pagingItems.itemCount == 0 &&
+            pagingItems.loadState.refresh is LoadState.NotLoading
 
-    if (state.isLoading) {
+    if (pagingItems.loadState.refresh is LoadState.Loading) {
         Box(
             modifier = modifier
                 .fillMaxSize(),
@@ -42,7 +48,7 @@ fun HistoryScreen(
             CircularProgressIndicator()
         }
     } else {
-        if (state.measurements.isEmpty()) {
+        if (measurementsAreEmpty) {
             Box(
                 modifier = modifier
                     .fillMaxSize(),
@@ -52,41 +58,50 @@ fun HistoryScreen(
             }
         }
 
+        //Swipe refresh
         PullToRefreshBox(
-            isRefreshing = state.isRefreshing,
-            onRefresh = { onAction(HistoryAction.OnRefreshAction) }
+            isRefreshing = pagingItems.loadState.refresh is LoadState.Loading,
+            //onRefresh = { onAction(HistoryAction.OnRefreshAction) }
+            onRefresh = { pagingItems.refresh() }
         ) {
             LazyColumn(
                 modifier = modifier
                     .fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(state.measurements, key = { it.id }) { itemUi ->
+                //items(state.measurements, key = { it.id }) { itemUi ->
+                items(pagingItems.itemCount, key = pagingItems.itemKey { it.id }) { idx ->
                     val scope = rememberCoroutineScope()
+                    val itemUi = pagingItems[idx]
 
-                    HistoryListItem(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .pointerInput(itemUi.id) {
-                                detectHorizontalDragGestures { _, dragAmount ->
-                                    if (dragAmount > 40f) { // przesunięcie w prawo
-                                        scope.launch {
-                                            Log.d(TAG,"Invoke onDelete for ${itemUi.id} ..., dragAmount = $dragAmount")
-                                            onAction(
-                                                HistoryAction.OnItemDeleteAction(
-                                                    itemUi
+                    if (itemUi != null) {
+                        HistoryListItem(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .pointerInput(itemUi.id) {
+                                    detectHorizontalDragGestures { _, dragAmount ->
+                                        if (dragAmount > 40f) { // przesunięcie w prawo
+                                            scope.launch {
+                                                Log.d(
+                                                    TAG,
+                                                    "Invoke onDelete for ${itemUi.id} ..., dragAmount = $dragAmount"
                                                 )
-                                            )
+                                                onAction(
+                                                    HistoryAction.OnItemDeleteAction(
+                                                        itemUi
+                                                    )
+                                                )
+                                            }
                                         }
                                     }
-                                }
-                            },
-                        itemUi = itemUi,
-                        onClick = {
-                            onAction(HistoryAction.OnItemEditAction(itemUi))
-                        }
-                    )
-                    HorizontalDivider()
+                                },
+                            itemUi = itemUi,
+                            onClick = {
+                                onAction(HistoryAction.OnItemEditAction(itemUi))
+                            }
+                        )
+                        HorizontalDivider()
+                    }
                 }
             }
         }

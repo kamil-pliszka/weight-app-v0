@@ -1,0 +1,107 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 8,
+    "identityHash": "66375e1a96a14e1e365b459d8730f305",
+    "entities": [
+      {
+        "tableName": "weight_measure",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `date` INTEGER NOT NULL, `weight` TEXT NOT NULL, `unit` TEXT NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "date",
+            "columnName": "date",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "weight",
+            "columnName": "weight",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "unit",
+            "columnName": "unit",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "user_profile",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `age` INTEGER, `height` INTEGER, `heightUnit` TEXT, `targetWeight` TEXT, `weightUnit` TEXT, `gender` TEXT, `photoPath` TEXT, `name` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "age",
+            "columnName": "age",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "height",
+            "columnName": "height",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "heightUnit",
+            "columnName": "heightUnit",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "targetWeight",
+            "columnName": "targetWeight",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "weightUnit",
+            "columnName": "weightUnit",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "gender",
+            "columnName": "gender",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "photoPath",
+            "columnName": "photoPath",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '66375e1a96a14e1e365b459d8730f305')"
+    ]
+  }
+}

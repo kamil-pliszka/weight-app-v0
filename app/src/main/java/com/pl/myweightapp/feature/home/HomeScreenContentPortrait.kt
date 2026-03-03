@@ -40,11 +40,7 @@ private const val TAG = "HomeScreenPortrait"
 fun HomeScreenContentPortrait(
     modifier: Modifier = Modifier,
     state: HomeUiState,
-    //onRefresh: () -> Unit,
     onAction: (Action) -> Unit,
-//    onChangePeriod: (DisplayPeriod) -> Unit,
-//    onChangeMovingAverages: (Int?, Int?) -> Unit,
-//    onChangeChartDimensions: (Int, Int) -> Unit,
 ) {
     Box(
         modifier = modifier.fillMaxSize()

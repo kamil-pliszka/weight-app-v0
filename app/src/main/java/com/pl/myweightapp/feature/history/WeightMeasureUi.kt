@@ -8,6 +8,7 @@ import com.pl.myweightapp.domain.WeightMeasure
 import com.pl.myweightapp.feature.common.ui.WeightUnitUi
 import com.pl.myweightapp.feature.common.ui.toWeightUnitUi
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.Instant
 import java.util.Locale
 
@@ -51,7 +52,7 @@ fun BigDecimal.toDisplayableNumber() =
 fun BigDecimal.toDisplayableNumberWithSign() =
     DisplayableValue(
         this,
-        toPlainString().let {
+        setScale(1, RoundingMode.HALF_UP).toPlainString().let {
             if (signum() > 0) "+$it" else it
         }
     )

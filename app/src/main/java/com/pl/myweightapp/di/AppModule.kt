@@ -1,12 +1,14 @@
 package com.pl.myweightapp.di
 
 import android.content.Context
+import android.util.Log
 import androidx.room.Room
+import com.pl.myweightapp.core.Constants
 import com.pl.myweightapp.data.StorageSupportImpl
 import com.pl.myweightapp.data.chart.ChartImageManagerImpl
 import com.pl.myweightapp.data.csv.CsvServiceImpl
 import com.pl.myweightapp.data.local.BackupManager
-import com.pl.myweightapp.data.local.MyDatabase
+import com.pl.myweightapp.data.local.WeightDatabase
 import com.pl.myweightapp.data.preferences.AppSettingsDataSource
 import com.pl.myweightapp.data.preferences.AppSettingsManager
 import com.pl.myweightapp.data.repository.AppSettingsRepositoryImpl
@@ -33,6 +35,7 @@ import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import java.util.concurrent.Executors
 import javax.inject.Singleton
 
 @Module
@@ -50,13 +53,23 @@ object AppModule {
     @Singleton
     fun provideDatabase(
         @ApplicationContext context: Context
-    ): MyDatabase {
+    ): WeightDatabase {
         return Room.databaseBuilder(
             context,
-            MyDatabase::class.java,
+            WeightDatabase::class.java,
             "my-app-database"
         )
             .fallbackToDestructiveMigration(false)
+            .apply {
+                if (Constants.LOG_SQL) {
+                    setQueryCallback(
+                        { sqlQuery, bindArgs ->
+                            Log.d("ROOM_SQL", "Query: $sqlQuery, args: $bindArgs")
+                        },
+                        Executors.newSingleThreadExecutor()
+                    )
+                }
+            }
             .build()
     }
 
@@ -64,14 +77,14 @@ object AppModule {
     @Provides
     @Singleton
     fun provideWeightMeasureRepository(
-        database: MyDatabase
+        database: WeightDatabase
     ): WeightMeasureRepository =
         WeightMeasureRepositoryImpl(database.weightMeasureDao())
 
     @Provides
     @Singleton
     fun provideUserProfileRepository(
-        database: MyDatabase
+        database: WeightDatabase
     ): UserProfileRepository =
         UserProfileRepositoryImpl(database.userProfileDao())
 
@@ -101,7 +114,7 @@ object AppModule {
     @Provides
     @Singleton
     fun provideComputeHomeStateUseCase(
-        generateWeightChartDataUseCase : GenerateWeightChartDataUseCase
+        generateWeightChartDataUseCase: GenerateWeightChartDataUseCase
     ): ComputeHomeStateUseCase = ComputeHomeStateUseCase(generateWeightChartDataUseCase)
 
     @Provides

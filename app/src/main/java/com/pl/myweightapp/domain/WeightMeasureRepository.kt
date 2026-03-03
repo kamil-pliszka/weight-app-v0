@@ -1,5 +1,6 @@
 package com.pl.myweightapp.domain
 
+import androidx.paging.PagingData
 import kotlinx.coroutines.flow.Flow
 import java.math.BigDecimal
 import java.time.Instant
@@ -32,6 +33,8 @@ interface WeightMeasureRepository {
     suspend fun findWeightMeasureHistory(): List<WeightMeasure>
 
     fun observeWeightMeasureHistory(): Flow<List<WeightMeasure>>
+
+    fun getPagedHistory(): Flow<PagingData<Pair<WeightMeasure, BigDecimal?>>>
 
     fun observeById(id: Long): Flow<WeightMeasure?>
 

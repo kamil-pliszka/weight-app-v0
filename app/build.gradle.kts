@@ -87,6 +87,10 @@ android {
     }
 }
 
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -99,6 +103,7 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
+    implementation(libs.androidx.room.paging)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.compose.material.icons.core)
     implementation(libs.bundles.ktor)
@@ -109,6 +114,8 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
+    implementation(libs.androidx.paging.runtime)
+    implementation(libs.androidx.paging.compose)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
