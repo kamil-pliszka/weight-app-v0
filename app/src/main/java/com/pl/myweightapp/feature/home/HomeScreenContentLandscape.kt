@@ -40,7 +40,6 @@ import com.pl.myweightapp.domain.DisplayPeriod
 import com.pl.myweightapp.feature.common.ui.EnumDropdownButton
 import com.pl.myweightapp.feature.common.ui.label
 import com.pl.myweightapp.feature.home.chart.ChartImageContent
-import com.pl.myweightapp.feature.home.chart.EmbeddedChartComponent
 
 private const val TAG = "HomeScreenLandscape"
 
@@ -121,15 +120,11 @@ fun ChartImageContentLandscape(
                 }
             }
     ) {
-        if (state.useEmbeddedChart) {
-            EmbeddedChartComponent(state = state)
-        } else {
-            ChartImageContent(
-                Modifier.matchParentSize(),
-                state.chartImage,
-                scrollState
-            )
-        }
+        ChartImageContent(
+            Modifier.matchParentSize(),
+            state,
+            scrollState
+        )
     }
 }
 

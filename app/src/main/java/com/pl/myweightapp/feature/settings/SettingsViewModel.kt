@@ -12,15 +12,17 @@ import com.pl.myweightapp.domain.csv.CsvParseException
 import com.pl.myweightapp.domain.csv.CsvService
 import com.pl.myweightapp.feature.common.DefaultUiEventOwner
 import com.pl.myweightapp.feature.common.UiEventOwner
-import com.pl.myweightapp.feature.common.launchSafely
+import com.pl.myweightapp.feature.common.launchWithErrorHandling
 import com.pl.myweightapp.feature.common.sendInfo
 import com.pl.myweightapp.feature.common.sendMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import java.io.InputStream
 import java.io.OutputStream
 import java.time.format.DateTimeFormatter
@@ -82,6 +84,9 @@ class SettingsViewModel @Inject constructor(
 
     init {
         observeSettings()
+        launchWithErrorHandling(showErrorMessage = false) {
+            updateRestoreAvailability()
+        }
     }
 
     private fun observeSettings() {
@@ -95,20 +100,12 @@ class SettingsViewModel @Inject constructor(
                         useEmbeddedChart = settings.embeddedChart,
                     )
                 }
-                updateAvailableRestore()
             }.launchIn(viewModelScope)
     }
 
-    private suspend fun updateAvailableRestore() {
-        //viewModelScope.launch {
+    private suspend fun updateRestoreAvailability() {
         val availableRestore = backupService.isAvailableRestore()
-        Log.d(TAG, "isAvailableRestore = $availableRestore")
-        _state.update {
-            it.copy(
-                visibleRestore = availableRestore,
-            )
-        }
-        //}
+        _state.update { it.copy(visibleRestore = availableRestore) }
     }
 
     private fun langDisplayResId(tag: String): Int? {
@@ -190,7 +187,7 @@ class SettingsViewModel @Inject constructor(
 
     private fun processCsvImport(input: InputStream) {
         Log.d(TAG, "CSV import")
-        launchSafely {
+        launchWithErrorHandling {
             withCsvProcessing {
                 try {
                     val entriesCount =
@@ -207,7 +204,7 @@ class SettingsViewModel @Inject constructor(
 
     private fun processCsvExport(output: OutputStream, filename: String?) {
         Log.d(TAG, "CSV export")
-        launchSafely {
+        launchWithErrorHandling {
             withCsvProcessing {
                 val entriesCount =
                     csvService.exportWeightCsv(null, output) { progress ->
@@ -223,11 +220,11 @@ class SettingsViewModel @Inject constructor(
     }
 
     private fun processDeleteAllData() {
-        launchSafely {
+        launchWithErrorHandling {
             withLoading {
                 backupService.deleteAll()
                 sendInfo(R.string.settings_delete_all_success)
-                updateAvailableRestore()
+                updateRestoreAvailability()
             }
         }
     }
@@ -235,9 +232,17 @@ class SettingsViewModel @Inject constructor(
 
     private fun setLanguage(tag: String) {
         Log.d(TAG, "setLanguage to: $tag")
-        launchSafely {
-            withLoading {
+        // Używamy Dispatchers.Main.immediate, aby AppCompatDelegate 
+        // mógł natychmiastowo zareagować na zmianę konfiguracji.
+        viewModelScope.launch(Dispatchers.Main.immediate) {
+            try {
+                _state.update { it.copy(isLoading = true) }
                 appSettingsService.changeLanguage(tag)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error changing language", e)
+                sendMessage(e.message ?: "Unknown error")
+            } finally {
+                _state.update { it.copy(isLoading = false) }
             }
         }
     }
@@ -245,7 +250,7 @@ class SettingsViewModel @Inject constructor(
 
     private fun changeUseEmbeddedChart(embeddedChart: Boolean) {
         Log.d(TAG, "changeUseEmbeddeChart to: $embeddedChart")
-        launchSafely {
+        launchWithErrorHandling {
             withLoading {
                 appSettingsService.updateEmbeddedChart(embeddedChart)
             }
@@ -255,14 +260,13 @@ class SettingsViewModel @Inject constructor(
 
     private fun tryToRestore() {
         Log.d(TAG, "tryToRestore")
-        launchSafely {
+        launchWithErrorHandling {
             withLoading {
                 val msg = backupService.tryToRestoreBackup()
                 sendMessage(msg)
-                updateAvailableRestore()
+                updateRestoreAvailability()
             }
         }
     }
 
 }
-

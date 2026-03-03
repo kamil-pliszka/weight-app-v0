@@ -13,7 +13,7 @@ import java.util.Locale
 
 
 @Immutable
-data class WieghtMeasureUi(
+data class WeightMeasureUi(
     val id: Long,
     val date: DisplayableValue<Instant>,
     val weight: DisplayableValue<BigDecimal>,
@@ -58,8 +58,8 @@ fun BigDecimal.toDisplayableNumberWithSign() =
 
 
 
-fun WeightMeasure.toWeightMeasureUi(change: BigDecimal? = null): WieghtMeasureUi {
-    return WieghtMeasureUi(
+fun WeightMeasure.toWeightMeasureUi(change: BigDecimal? = null): WeightMeasureUi {
+    return WeightMeasureUi(
         id = id,
         date = date.toDisplayableInstant(),
         weight = weight.toDisplayableNumber(),

@@ -9,7 +9,8 @@ import com.pl.myweightapp.domain.WeightMeasure
 import com.pl.myweightapp.domain.WeightMeasureRepository
 import com.pl.myweightapp.feature.common.DefaultUiEventOwner
 import com.pl.myweightapp.feature.common.UiEventOwner
-import com.pl.myweightapp.feature.common.launchSafely
+import com.pl.myweightapp.feature.common.launchWithErrorHandling
+import com.pl.myweightapp.feature.common.sendException
 import com.pl.myweightapp.feature.common.sendInfo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -17,6 +18,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
@@ -27,9 +29,8 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 sealed interface HistoryAction {
-    data class OnItemEditAction(val itemUI: WieghtMeasureUi) : HistoryAction
-    object OnCloseEditAction : HistoryAction
-    data class OnItemDeleteAction(val itemUI: WieghtMeasureUi) : HistoryAction
+    data class OnItemEditAction(val itemUI: WeightMeasureUi) : HistoryAction
+    data class OnItemDeleteAction(val itemUI: WeightMeasureUi) : HistoryAction
     data class OnConfirmDeleteAction(val itemId: Long) : HistoryAction
     object OnCancelDeleteAction : HistoryAction
     object OnRefreshAction : HistoryAction
@@ -39,9 +40,8 @@ sealed interface HistoryAction {
 data class HistoryUiState(
     val isLoading: Boolean = false,
     val isRefreshing: Boolean = false,
-    val measurements: List<WieghtMeasureUi> = emptyList(),
-    val editingItemId: Long? = null,
-    val deletingItem: WieghtMeasureUi? = null,
+    val measurements: List<WeightMeasureUi> = emptyList(),
+    val deletingItem: WeightMeasureUi? = null,
 )
 
 sealed interface HistoryUiEvent {
@@ -49,7 +49,6 @@ sealed interface HistoryUiEvent {
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
-//class HistoryViewModel : ViewModel() {
 @HiltViewModel
 class HistoryViewModel @Inject constructor(
     val repository: WeightMeasureRepository,
@@ -70,22 +69,24 @@ class HistoryViewModel @Inject constructor(
         _navEvents.emit(HistoryUiEvent.NavToEditMeasure(id))
     }
 
-    private val refreshTrigger = MutableSharedFlow<Unit>()
+    // w zasadzie niepotrzebne, room sam odświeża dane po ich modyfikacji
+    // trigger dodany żeby przetestować swipeToRefresh
+    // pozostawiony ze względu na przyszłe:
+    // możliwość że dojdzie synchronizacja z backendem
+    // architektura gotową na remote source
+    private val refreshTrigger = MutableSharedFlow<Unit>(
+        extraBufferCapacity = 1
+    )
 
     init {
         refreshTrigger
             .onStart {
-                // pierwszy start ViewModelu
-                _state.update { it.copy(isLoading = true) }
                 emit(Unit)
+                _state.update { it.copy(isLoading = true) }
             }
-            .flatMapLatest {
-                Log.d(TAG,"Refresh trigger started")
-                repository.observeWeightMeasureHistory()
-            }
+            .flatMapLatest { repository.observeWeightMeasureHistory() }
             .map { convertToHistoryUi(it) }
             .onEach { uiList ->
-                Log.d(TAG,"Got results from DB, size: ${uiList.size}")
                 _state.update {
                     it.copy(
                         isLoading = false,
@@ -94,58 +95,24 @@ class HistoryViewModel @Inject constructor(
                     )
                 }
             }
+            .catch { e ->
+                Log.e(TAG, "Error loading history", e)
+                sendException(e)
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        isRefreshing = false
+                    )
+                }
+            }
             .launchIn(viewModelScope)
+
     }
 
-//    init {
-//        viewModelScope.launch {
-//            AppModule.provideWeightMeasureRepository()
-//                .observeWeightMeasureHistory()
-//                .collect { history ->
-//                    val uiList = convertToHistoryUi(history)
-//                    _state.update { current ->
-//                        current.copy(
-//                            isLoading = false,
-//                            measurements = uiList
-//                        )
-//                    }
-//                }
-//        }
-//    }
-
-//    private fun launchWithErrorHandling(
-//        block: suspend () -> Unit
-//    ) {
-//        viewModelScope.launch {
-//            try {
-//                block()
-//            } catch (e: CancellationException) {
-//                throw e
-//            } catch (e: Throwable) {
-//                Log.e("HistoryViewModel", "error", e)
-//                //withContext(Dispatchers.Main) {
-//                _events.send(ModelEvent.IOError(exceptionToString(e)))
-//                //}
-//            }
-//        }
-//    }
-//
-//    private fun loadHistory() {
-//        launchWithErrorHandling {
-//            _state.update { it.copy(isLoading = true) }
-//            val weightMeasureHistory = withContext(Dispatchers.IO) {
-//                MyContainer.provideWeightMeasureRepository().findWeightMeasureHistory()
-//            }
-//            _state.update {
-//                it.copy(
-//                    isLoading = false,
-//                    measurements = convertToHistoryUi(weightMeasureHistory)
-//                )
-//            }
-//        }
-//    }
-
-    private fun convertToHistoryUi(historySorted: List<WeightMeasure>): List<WieghtMeasureUi> {
+    /**
+     * historySorted must be sorted DESC by date
+     */
+    private fun convertToHistoryUi(historySorted: List<WeightMeasure>): List<WeightMeasureUi> {
         return historySorted.mapIndexed { idx, elem ->
             val prevWeight = historySorted.getOrNull(idx + 1)?.weight
             val change = prevWeight?.let { elem.weight - it }
@@ -157,16 +124,14 @@ class HistoryViewModel @Inject constructor(
     fun onAction(action: HistoryAction) {
         when (action) {
             is HistoryAction.OnItemEditAction -> {
-                //_state.update { it.copy(editingItemId = action.itemUI.id) }
-                //navController.navigate("${Screen.Edit.route}/${action.itemUI.id}")
                 viewModelScope.launch {
                     sendNavToEditMeasure(action.itemUI.id)
                 }
             }
 
-            HistoryAction.OnCloseEditAction -> {
+            /*HistoryAction.OnCloseEditAction -> {
                 _state.update { it.copy(editingItemId = null) }
-            }
+            }*/
 
             is HistoryAction.OnItemDeleteAction -> {
                 _state.update { it.copy(deletingItem = action.itemUI) }
@@ -183,15 +148,14 @@ class HistoryViewModel @Inject constructor(
             HistoryAction.OnRefreshAction -> {
                 Log.d(TAG,"OnRefreshAction")
                 _state.update { it.copy(isRefreshing = true) }
-                viewModelScope.launch {
-                    refreshTrigger.emit(Unit)
-                }
+                refreshTrigger.tryEmit(Unit)
             }
         }
     }
 
     private fun onConfirmDelete(itemId: Long) {
-        launchSafely {
+        launchWithErrorHandling {
+            //Room sam wyemituje nową listę po delete, nie trzeba recznie odświeżać
             repository.delete(itemId)
             sendInfo(R.string.successfully_deleted)
             _state.update { it.copy(deletingItem = null) }

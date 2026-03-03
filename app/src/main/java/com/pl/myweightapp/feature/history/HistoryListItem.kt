@@ -23,7 +23,7 @@ import java.time.Instant
 @Composable
 fun HistoryListItem(
     modifier: Modifier = Modifier,
-    itemUi: WieghtMeasureUi,
+    itemUi: WeightMeasureUi,
     onClick: () -> Unit,
 ) {
     val contentColor = MaterialTheme.colorScheme.onSurface

@@ -8,7 +8,7 @@ import com.pl.myweightapp.domain.WeightMeasureRepository
 import com.pl.myweightapp.domain.WeightUnit
 import com.pl.myweightapp.feature.common.DefaultUiEventOwner
 import com.pl.myweightapp.feature.common.UiEventOwner
-import com.pl.myweightapp.feature.common.launchSafely
+import com.pl.myweightapp.feature.common.launchWithErrorHandling
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -65,7 +65,11 @@ class AddMeasureViewModel @Inject constructor(
 
     init {
         Log.d(TAG, "init")
-        launchSafely {
+        launchWithErrorHandling(
+            onError = {
+                _state.update { it.copy(isLoading = false) }
+            }
+        ) {
             _state.update { it.copy(isLoading = true) }
             repository.findLastWeightMeasureAndUnit()?.let { (value, unit) ->
                 Log.d(TAG, "LastWeightMeasure: $value, unit: $unit")
@@ -101,7 +105,7 @@ class AddMeasureViewModel @Inject constructor(
         } else {
             choosenDate.toInstant()
         }
-        launchSafely {
+        launchWithErrorHandling {
             repository.insertMeasure(
                 date = instantDate,
                 weight = currentMeasure,

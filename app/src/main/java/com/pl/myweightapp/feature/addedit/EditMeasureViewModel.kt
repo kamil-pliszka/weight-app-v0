@@ -8,7 +8,7 @@ import com.pl.myweightapp.R
 import com.pl.myweightapp.domain.WeightMeasureRepository
 import com.pl.myweightapp.feature.common.DefaultUiEventOwner
 import com.pl.myweightapp.feature.common.UiEventOwner
-import com.pl.myweightapp.feature.common.launchSafely
+import com.pl.myweightapp.feature.common.launchWithErrorHandling
 import com.pl.myweightapp.feature.common.sendInfo
 import com.pl.myweightapp.feature.common.ui.WeightUnitUi
 import com.pl.myweightapp.feature.common.ui.toWeightUnit
@@ -80,10 +80,7 @@ class EditMeasureViewModel @Inject constructor(
                 .observeById(itemId)
                 .collect { entity ->
                     Log.d(TAG, "Got refreshed entity: $itemId")
-                    if (entity == null) {
-                        //when deleted
-                        //_state.value = EditMeasureUiState.Deleted
-                    } else {
+                    if (entity != null && _state.value !is EditMeasureUiState.Processing) {
                         _state.value = EditMeasureUiState.Loaded(
                             date = entity.date,
                             weight = entity.weight,
@@ -138,7 +135,7 @@ class EditMeasureViewModel @Inject constructor(
         if (current !is EditMeasureUiState.Loaded) return
 
         _state.value = EditMeasureUiState.Processing
-        launchSafely(
+        launchWithErrorHandling(
             onError = {
                 _state.value = current
             }
@@ -173,7 +170,7 @@ class EditMeasureViewModel @Inject constructor(
         if (current !is EditMeasureUiState.Loaded) return
 
         _state.value = EditMeasureUiState.Processing
-        launchSafely(
+        launchWithErrorHandling(
             onError = {
                 _state.value = current
             }

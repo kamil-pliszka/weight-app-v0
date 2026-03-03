@@ -14,7 +14,7 @@ import com.pl.myweightapp.domain.usecase.ComputeHomeStateUseCase
 import com.pl.myweightapp.domain.usecase.GenerateChartImageUseCase
 import com.pl.myweightapp.feature.common.DefaultUiEventOwner
 import com.pl.myweightapp.feature.common.UiEventOwner
-import com.pl.myweightapp.feature.common.launchSafely
+import com.pl.myweightapp.feature.common.launchWithErrorHandling
 import com.pl.myweightapp.feature.common.sendError
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -141,19 +141,19 @@ class HomeViewModel @Inject constructor(
                 val image = generateChartImageUseCase(
                     chartData = data, widthPx = width, heightPx = height
                 )
+                _state.update { it.copy(chartImage = image) }
                 if (image != null) {
                     withContext(Dispatchers.IO) {
                         chartImageManager.export(image)
                     }
                 }
-                _state.update { it.copy(chartImage = image) }
             }
             .launchIn(viewModelScope)
 
     }
 
     private fun tryToLoadFromFile() {
-        launchSafely {
+        launchWithErrorHandling {
             val chartImage = chartImageManager.import()
             if (chartImage != null) {
                 Log.d(TAG, "loaded chart from file")
@@ -165,13 +165,13 @@ class HomeViewModel @Inject constructor(
 
 
     private fun changePeriod(period: DisplayPeriod) {
-        launchSafely {
+        launchWithErrorHandling {
             appSettingsService.changePeriod(period.name)
         }
     }
 
     private fun changeMovingAverages(ma1: Int?, ma2: Int?) {
-        launchSafely {
+        launchWithErrorHandling {
             appSettingsService.changeMovingAverages(
                 if (ma1 == null || ma1 <= 1) null else ma1,
                 if (ma2 == null || ma2 <= 1) null else ma2

@@ -129,9 +129,9 @@ class BackupManager @Inject constructor(
     }
 
     override suspend fun isAvailableRestore(): Boolean = withContext(Dispatchers.IO) {
-        (!userProfileRepository.hasAny()
-                && !weightRepository.hasAny())
-                && (getWeightBackupFile().exists() || getProfilePhotoFile().exists())
+        val noData = !userProfileRepository.hasAny() && !weightRepository.hasAny()
+        val backupExists = getWeightBackupFile().exists() || getProfilePhotoFile().exists()
+        noData && backupExists
     }
 
     override suspend fun deleteAll() = withContext(Dispatchers.IO) {

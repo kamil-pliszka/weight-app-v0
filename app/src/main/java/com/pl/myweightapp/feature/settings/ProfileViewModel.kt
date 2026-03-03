@@ -16,7 +16,7 @@ import com.pl.myweightapp.domain.UserProfileRepository
 import com.pl.myweightapp.domain.WeightUnit
 import com.pl.myweightapp.feature.common.DefaultUiEventOwner
 import com.pl.myweightapp.feature.common.UiEventOwner
-import com.pl.myweightapp.feature.common.launchSafely
+import com.pl.myweightapp.feature.common.launchWithErrorHandling
 import com.pl.myweightapp.feature.common.sendInfo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -182,7 +182,7 @@ class ProfileViewModel @Inject constructor(
             }
 
             is ProfileAction.PhotoPicked -> {
-                launchSafely {
+                launchWithErrorHandling {
                     val savedPath = storageSupport.saveProfileImage(action.input)
                     //_state.update { it.copy(photoPath = savedPath) }
                     //deleteOldPhotoIfExists(state.value.photoPath)
@@ -248,7 +248,7 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    private fun save() = launchSafely {
+    private fun save() = launchWithErrorHandling {
         withSaving {
             val s = state.value
             val age = s.age.toIntOrNull()

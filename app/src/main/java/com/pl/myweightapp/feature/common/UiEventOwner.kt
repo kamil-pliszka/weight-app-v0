@@ -1,6 +1,8 @@
 package com.pl.myweightapp.feature.common
 
 import androidx.annotation.StringRes
+import com.pl.myweightapp.R
+import com.pl.myweightapp.core.util.exceptionToString
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -22,6 +24,14 @@ class DefaultUiEventOwner : UiEventOwner {
     }
 }
 
+suspend fun UiEventOwner.sendException(
+    e: Throwable
+) {
+    this.sendError(
+        R.string.error_msg_prefix,
+        exceptionToString(e)
+    )
+}
 
 suspend fun UiEventOwner.sendError(
     @StringRes resId: Int,

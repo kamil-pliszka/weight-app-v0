@@ -16,43 +16,51 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.pl.myweightapp.R
-import com.pl.myweightapp.domain.chart.ChartImage
+import com.pl.myweightapp.feature.home.HomeUiState
 
 @Composable
 fun ChartImageContent(
     modifier: Modifier = Modifier,
-    chartImage: ChartImage?,
+    state: HomeUiState,
     scrollState: ScrollState
 ) {
-    Box(
-        modifier = modifier
-            .horizontalScroll(scrollState),
-        contentAlignment = Alignment.CenterStart
-    ) {
-        if (chartImage != null) {
-            val bitmapImage = remember(chartImage) {
-                decodeChartImageToBitmap(chartImage)
-            }
-            if (bitmapImage != null) {
-                Image(
-                    bitmap = bitmapImage,
-                    contentDescription = stringResource(R.string.home_weight_graph),
-                    modifier = Modifier
-                        .fillMaxHeight(),
-                    //.onSizeChanged { sz -> Log.d(TAG,"new size:img:$sz") }
-                    contentScale = ContentScale.FillHeight
-                )
+    if (state.useEmbeddedChart) {
+        EmbeddedChartComponent(state = state)
+    } else {
+        Box(
+            modifier = modifier
+                .horizontalScroll(scrollState),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            if (state.chartImage != null) {
+                val bitmapImage = remember(state.chartImage) {
+                    decodeChartImageToBitmap(state.chartImage)
+                }
+                if (bitmapImage != null) {
+                    Image(
+                        bitmap = bitmapImage,
+                        contentDescription = stringResource(R.string.home_weight_graph),
+                        modifier = Modifier
+                            .fillMaxHeight(),
+                        //.onSizeChanged { sz -> Log.d(TAG,"new size:img:$sz") }
+                        contentScale = ContentScale.FillHeight
+                    )
+                } else {
+                    Text(stringResource(R.string.chart_error_image))
+                }
             } else {
-                Text(stringResource(R.string.chart_error_image))
+                if (state.chartData.measures.isEmpty()) {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_chart_trend_down),
+                        contentDescription = stringResource(R.string.home_weight_graph),
+                        modifier = Modifier
+                            .size(200.dp)
+                            .align(Alignment.Center),
+                    )
+                } else {
+                    //CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                }
             }
-        } else {
-            Image(
-                painter = painterResource(id = R.drawable.ic_chart_trend_down),
-                contentDescription = stringResource(R.string.home_weight_graph),
-                modifier = Modifier
-                    .size(200.dp)
-                    .align(Alignment.Center),
-            )
         }
     }
 }

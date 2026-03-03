@@ -1,4 +1,4 @@
-package com.pl.myweightapp
+package com.pl.myweightapp.app
 
 import android.app.Application
 import com.pl.myweightapp.domain.AppSettingsService
