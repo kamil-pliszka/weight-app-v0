@@ -76,7 +76,7 @@ fun SettingsScreen(
             val filename = getFileNameFromUri(context, uri)
             val mime = context.contentResolver.getType(uri)
             Log.d(TAG, "mime: $mime, filename: $filename")
-            context.contentResolver.openOutputStream(uri)?.use { stream ->
+            context.contentResolver.openOutputStream(uri)?.let { stream ->
                 onAction(Action.OnCsvExport(stream, filename))
             }
         }
