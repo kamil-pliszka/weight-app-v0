@@ -6,6 +6,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pl.myweightapp.R
 import com.pl.myweightapp.core.Constants.PROFILE_PHOTO_FILENAME
+import com.pl.myweightapp.core.util.cmToInch
+import com.pl.myweightapp.core.util.inchToCm
 import com.pl.myweightapp.core.util.kgToLbs
 import com.pl.myweightapp.core.util.lbsToKg
 import com.pl.myweightapp.domain.Gender
@@ -29,6 +31,7 @@ import kotlinx.coroutines.launch
 import java.io.InputStream
 import java.math.BigDecimal
 import javax.inject.Inject
+import kotlin.math.roundToInt
 
 
 @Immutable
@@ -204,8 +207,9 @@ class ProfileViewModel @Inject constructor(
             }
 
             ProfileAction.ToggleHeightUnit -> {
-                //TODO - zrobić przełączanie jednostek
-                update { copy(heightUnit = if (heightUnit == HeightUnit.CM) HeightUnit.IN else HeightUnit.CM) }
+                val newHeightUnit =
+                    if (state.value.heightUnit == HeightUnit.CM) HeightUnit.IN else HeightUnit.CM
+                onHeightUnitChange(newHeightUnit)
             }
 
             ProfileAction.ToggleGender -> {
@@ -247,6 +251,26 @@ class ProfileViewModel @Inject constructor(
             )
         }
     }
+
+    private fun onHeightUnitChange(newHeightUnit: HeightUnit) {
+        if (state.value.heightUnit == newHeightUnit) return
+        update {
+            copy(
+                heightUnit = newHeightUnit,
+                height = convertHeight(height, newHeightUnit) ?: height
+            )
+        }
+    }
+
+    private fun convertHeight(currentHeight: String, newUnit: HeightUnit): String? {
+        val height = currentHeight.toIntOrNull() ?: return null
+        val newValue = when (newUnit) {
+            HeightUnit.CM -> height.toFloat().inchToCm()
+            HeightUnit.IN -> height.toFloat().cmToInch()
+        }
+        return newValue.roundToInt().toString()
+    }
+
 
     private fun save() = launchWithErrorHandling {
         withSaving {
